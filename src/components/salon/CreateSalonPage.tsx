@@ -41,7 +41,7 @@ const LANGUAGES = [
   { code: "ar", label: "Arabic" },
 ];
 
-const STEPS = ["Profile", "Location", "Services", "Schedule", "Media"];
+const STEPS = ["Profile", "Location", "Services", "Schedule", "Extras", "Media"];
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);

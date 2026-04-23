@@ -391,8 +391,9 @@ export function CreateSalonPage() {
               ))}
             </div>
           </Section>
+            )}
 
-          {/* Section: Additional */}
+            {step === 4 && (
           <Section
             icon={<Globe2 className="h-4 w-4" />}
             label="05"

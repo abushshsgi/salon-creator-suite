@@ -873,3 +873,291 @@ function DropzoneEmpty({ label, small }: { label: string; small?: boolean }) {
     </div>
   );
 }
+
+/* ---------- Working Hours Picker ---------- */
+
+const DAY_FULL: Record<string, string> = {
+  Mon: "Monday",
+  Tue: "Tuesday",
+  Wed: "Wednesday",
+  Thu: "Thursday",
+  Fri: "Friday",
+  Sat: "Saturday",
+  Sun: "Sunday",
+};
+
+const HOUR_PRESETS = [
+  { label: "9–18", from: "09:00", to: "18:00" },
+  { label: "10–20", from: "10:00", to: "20:00" },
+  { label: "11–22", from: "11:00", to: "22:00" },
+  { label: "14–23", from: "14:00", to: "23:00" },
+];
+
+function WorkingHoursPicker({
+  schedule,
+  setSchedule,
+}: {
+  schedule: DaySchedule[];
+  setSchedule: React.Dispatch<React.SetStateAction<DaySchedule[]>>;
+}) {
+  const [activeDay, setActiveDay] = useState<string | null>(null);
+
+  const update = (day: string, patch: Partial<DaySchedule>) =>
+    setSchedule((prev) => prev.map((d) => (d.day === day ? { ...d, ...patch } : d)));
+
+  const applyAll = (patch: Partial<DaySchedule>) =>
+    setSchedule((prev) => prev.map((d) => ({ ...d, ...patch })));
+
+  const presets = [
+    {
+      key: "weekdays",
+      label: "Weekdays",
+      sub: "Mon–Fri · 9–18",
+      icon: <Coffee className="h-3.5 w-3.5" />,
+      apply: () =>
+        setSchedule((prev) =>
+          prev.map((d) => ({
+            ...d,
+            open: !["Sat", "Sun"].includes(d.day),
+            from: "09:00",
+            to: "18:00",
+          })),
+        ),
+    },
+    {
+      key: "standard",
+      label: "Standard",
+      sub: "Mon–Sat · 9–20",
+      icon: <Sun className="h-3.5 w-3.5" />,
+      apply: () =>
+        setSchedule((prev) =>
+          prev.map((d) => ({
+            ...d,
+            open: d.day !== "Sun",
+            from: "09:00",
+            to: "20:00",
+          })),
+        ),
+    },
+    {
+      key: "everyday",
+      label: "Every day",
+      sub: "All week · 10–22",
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      apply: () =>
+        applyAll({ open: true, from: "10:00", to: "22:00" }),
+    },
+    {
+      key: "evening",
+      label: "Evenings",
+      sub: "Mon–Sat · 14–23",
+      icon: <Moon className="h-3.5 w-3.5" />,
+      apply: () =>
+        setSchedule((prev) =>
+          prev.map((d) => ({
+            ...d,
+            open: d.day !== "Sun",
+            from: "14:00",
+            to: "23:00",
+          })),
+        ),
+    },
+  ];
+
+  const openCount = schedule.filter((d) => d.open).length;
+
+  return (
+    <div className="space-y-5">
+      {/* Presets */}
+      <div>
+        <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Quick presets
+        </label>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {presets.map((p) => (
+            <button
+              key={p.key}
+              onClick={p.apply}
+              className="group flex flex-col items-start gap-1 rounded-xl border border-border bg-card p-3 text-left transition-[var(--transition-smooth)] hover:border-foreground hover:shadow-[var(--shadow-soft)] active:scale-[0.98]"
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-foreground group-hover:bg-foreground group-hover:text-background transition-[var(--transition-smooth)]">
+                {p.icon}
+              </span>
+              <span className="text-xs font-semibold text-foreground">{p.label}</span>
+              <span className="text-[10px] text-muted-foreground">{p.sub}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="flex items-center justify-between rounded-xl bg-muted/50 px-4 py-2.5">
+        <span className="text-xs font-medium text-foreground">
+          {openCount} {openCount === 1 ? "day" : "days"} open
+        </span>
+        <button
+          onClick={() => applyAll({ open: false })}
+          className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+        >
+          Close all
+        </button>
+      </div>
+
+      {/* Day grid */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {schedule.map((d) => {
+          const isActive = activeDay === d.day;
+          return (
+            <motion.button
+              key={d.day}
+              layout
+              onClick={() => {
+                if (!d.open) {
+                  update(d.day, { open: true });
+                  setActiveDay(d.day);
+                } else if (isActive) {
+                  setActiveDay(null);
+                } else {
+                  setActiveDay(d.day);
+                }
+              }}
+              className={cn(
+                "relative flex flex-col items-start gap-1.5 rounded-2xl border p-3 text-left transition-[var(--transition-smooth)]",
+                d.open
+                  ? isActive
+                    ? "border-foreground bg-foreground text-background shadow-[var(--shadow-pop)]"
+                    : "border-border bg-card text-foreground hover:border-foreground/50"
+                  : "border-dashed border-border bg-muted/30 text-muted-foreground hover:border-foreground/30",
+              )}
+            >
+              <div className="flex w-full items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider">
+                  {d.day}
+                </span>
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    d.open
+                      ? isActive
+                        ? "bg-background"
+                        : "bg-foreground"
+                      : "bg-muted-foreground/40",
+                  )}
+                />
+              </div>
+              {d.open ? (
+                <span
+                  className={cn(
+                    "text-[13px] font-semibold tabular-nums",
+                    isActive ? "text-background" : "text-foreground",
+                  )}
+                >
+                  {d.from}–{d.to}
+                </span>
+              ) : (
+                <span className="text-[11px] font-medium">Closed</span>
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* Inline editor for active day */}
+      <AnimatePresence initial={false}>
+        {activeDay && (
+          <motion.div
+            key={activeDay}
+            initial={{ opacity: 0, height: 0, y: -6 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -6 }}
+            transition={{ duration: 0.22 }}
+            className="overflow-hidden"
+          >
+            {(() => {
+              const day = schedule.find((d) => d.day === activeDay);
+              if (!day) return null;
+              return (
+                <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Editing
+                      </div>
+                      <div className="text-sm font-semibold text-foreground">
+                        {DAY_FULL[day.day]}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        update(day.day, { open: false });
+                        setActiveDay(null);
+                      }}
+                      className="rounded-lg border border-border bg-background px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:border-foreground hover:text-foreground"
+                    >
+                      Set closed
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="rounded-xl border border-border bg-background p-2.5">
+                      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Opens
+                      </div>
+                      <input
+                        type="time"
+                        value={day.from}
+                        onChange={(e) => update(day.day, { from: e.target.value })}
+                        className="w-full bg-transparent text-base font-semibold tabular-nums text-foreground outline-none"
+                      />
+                    </div>
+                    <div className="rounded-xl border border-border bg-background p-2.5">
+                      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Closes
+                      </div>
+                      <input
+                        type="time"
+                        value={day.to}
+                        onChange={(e) => update(day.day, { to: e.target.value })}
+                        className="w-full bg-transparent text-base font-semibold tabular-nums text-foreground outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Hour quick presets */}
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {HOUR_PRESETS.map((h) => {
+                      const active = day.from === h.from && day.to === h.to;
+                      return (
+                        <button
+                          key={h.label}
+                          onClick={() => update(day.day, { from: h.from, to: h.to })}
+                          className={cn(
+                            "rounded-full border px-3 py-1 text-[11px] font-semibold transition-[var(--transition-smooth)]",
+                            active
+                              ? "border-foreground bg-foreground text-background"
+                              : "border-border bg-background text-foreground hover:border-foreground/50",
+                          )}
+                        >
+                          {h.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      applyAll({ from: day.from, to: day.to });
+                    }}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-background py-2 text-[11px] font-semibold uppercase tracking-wider text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted"
+                  >
+                    <Copy className="h-3 w-3" /> Apply to all days
+                  </button>
+                </div>
+              );
+            })()}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

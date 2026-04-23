@@ -78,6 +78,8 @@ export function CreateSalonPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState(1);
 
   const isValid = useMemo(() => {
     return (
@@ -88,19 +90,42 @@ export function CreateSalonPage() {
     );
   }, [name, phone, address, services]);
 
-  const completedSteps = useMemo(() => {
-    const flags = [
-      name.trim() && phone.trim() && address.trim(),
-      lat && lng,
+  const stepValid = useMemo(() => {
+    return [
+      Boolean(name.trim() && phone.trim() && address.trim()),
+      Boolean(lat && lng),
       services.every((s) => s.name && s.price && s.duration),
       schedule.some((d) => d.open),
-      cover || gallery.length > 0,
+      languages.length > 0,
+      Boolean(cover || gallery.length > 0),
     ];
-    return flags.map(Boolean);
-  }, [name, phone, address, lat, lng, services, schedule, cover, gallery]);
+  }, [name, phone, address, lat, lng, services, schedule, languages, cover, gallery]);
 
-  const activeStep = completedSteps.findIndex((c) => !c);
-  const currentStep = activeStep === -1 ? STEPS.length - 1 : activeStep;
+  const completedSteps = useMemo(
+    () => stepValid.map((v, i) => v && i < step),
+    [stepValid, step],
+  );
+
+  const canNext = stepValid[step];
+  const isLast = step === STEPS.length - 1;
+
+  const goNext = () => {
+    if (!canNext || isLast) return;
+    setDirection(1);
+    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const goBack = () => {
+    if (step === 0) return;
+    setDirection(-1);
+    setStep((s) => Math.max(0, s - 1));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const updateService = (id: string, key: keyof Service, value: string) =>
     setServices((prev) => prev.map((s) => (s.id === id ? { ...s, [key]: value } : s)));

@@ -13,6 +13,8 @@ import {
   Loader2,
   UploadCloud,
   X,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

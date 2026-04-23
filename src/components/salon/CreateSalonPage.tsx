@@ -531,43 +531,75 @@ export function CreateSalonPage() {
               )}
             </div>
           </Section>
-        </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Sticky bottom action bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[900px] items-center justify-between gap-4 px-6 py-4">
-          <p className="text-xs text-muted-foreground">
-            {isValid ? (
-              <span className="flex items-center gap-1.5 font-medium text-foreground">
-                <Check className="h-3.5 w-3.5" /> Ready to create
-              </span>
-            ) : (
-              "Please fill all required fields"
-            )}
-          </p>
+        <div className="mx-auto flex max-w-[900px] items-center justify-between gap-3 px-6 py-4">
           <button
-            disabled={!isValid || submitting}
-            onClick={handleSubmit}
+            onClick={goBack}
+            disabled={step === 0 || submitting}
             className={cn(
-              "group relative inline-flex h-11 min-w-[160px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
-              isValid && !submitting
-                ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
-                : "cursor-not-allowed bg-muted text-muted-foreground",
+              "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-[var(--transition-smooth)]",
+              step === 0
+                ? "cursor-not-allowed opacity-40"
+                : "hover:bg-muted hover:scale-[1.02] active:scale-[0.98]",
             )}
           >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Creating…
-              </>
-            ) : success ? (
-              <>
-                <Check className="h-4 w-4" /> Created
-              </>
-            ) : (
-              <>Create Salon</>
-            )}
+            <ArrowLeft className="h-4 w-4" /> Back
           </button>
+
+          <p className="hidden text-xs text-muted-foreground sm:block">
+            {canNext ? (
+              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                <Check className="h-3.5 w-3.5" />
+                {isLast ? "Ready to create" : `Step ${step + 1} complete`}
+              </span>
+            ) : (
+              "Please fill required fields"
+            )}
+          </p>
+
+          {isLast ? (
+            <button
+              disabled={!isValid || submitting}
+              onClick={handleSubmit}
+              className={cn(
+                "group relative inline-flex h-11 min-w-[160px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
+                isValid && !submitting
+                  ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
+                  : "cursor-not-allowed bg-muted text-muted-foreground",
+              )}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Creating…
+                </>
+              ) : success ? (
+                <>
+                  <Check className="h-4 w-4" /> Created
+                </>
+              ) : (
+                <>Create Salon</>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={goNext}
+              disabled={!canNext}
+              className={cn(
+                "inline-flex h-11 min-w-[140px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
+                canNext
+                  ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
+                  : "cursor-not-allowed bg-muted text-muted-foreground",
+              )}
+            >
+              Continue <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

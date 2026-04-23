@@ -15,6 +15,11 @@ import {
   X,
   ArrowLeft,
   ArrowRight,
+  Copy,
+  Sun,
+  Moon,
+  Coffee,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -282,6 +287,35 @@ export function CreateSalonPage() {
             description="What do you offer?"
           >
             <div className="space-y-3">
+              {/* Quick add presets */}
+              <div className="flex flex-wrap gap-2 pb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground self-center mr-1">
+                  Quick add
+                </span>
+                {[
+                  { name: "Haircut", price: "20", duration: "30" },
+                  { name: "Beard trim", price: "15", duration: "20" },
+                  { name: "Shave", price: "18", duration: "25" },
+                  { name: "Hair + Beard", price: "32", duration: "45" },
+                  { name: "Kids cut", price: "12", duration: "20" },
+                ].map((p) => (
+                  <button
+                    key={p.name}
+                    onClick={() =>
+                      setServices((prev) => {
+                        const last = prev[prev.length - 1];
+                        const empty = last && !last.name && !last.price && !last.duration;
+                        const next = { id: uid(), ...p };
+                        return empty ? [...prev.slice(0, -1), next] : [...prev, next];
+                      })
+                    }
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted"
+                  >
+                    <Sparkles className="h-3 w-3" /> {p.name}
+                  </button>
+                ))}
+              </div>
+
               <AnimatePresence initial={false}>
                 {services.map((s, i) => (
                   <motion.div
@@ -314,13 +348,13 @@ export function CreateSalonPage() {
                           compact
                         />
                         <FloatingInput
-                          label="Price"
+                          label="Price ($)"
                           value={s.price}
                           onChange={(v) => updateService(s.id, "price", v)}
                           compact
                         />
                         <FloatingInput
-                          label="Min"
+                          label="Duration (min)"
                           value={s.duration}
                           onChange={(v) => updateService(s.id, "duration", v)}
                           compact
@@ -332,10 +366,12 @@ export function CreateSalonPage() {
               </AnimatePresence>
               <button
                 onClick={addService}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-transparent px-4 py-3.5 text-sm font-medium text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/40 hover:text-foreground"
+                className="group flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-transparent px-4 py-4 text-sm font-semibold text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-[0.99]"
               >
-                <Plus className="h-4 w-4" />
-                Add service
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-background transition-transform group-hover:rotate-90">
+                  <Plus className="h-4 w-4" />
+                </span>
+                Add new service
               </button>
             </div>
           </Section>
@@ -346,50 +382,181 @@ export function CreateSalonPage() {
             icon={<Clock className="h-4 w-4" />}
             label="04"
             title="Working Hours"
-            description="Set your weekly schedule."
+            description="Pick a preset or customize each day."
           >
-            <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-              {schedule.map((d) => (
-                <div
-                  key={d.day}
-                  className="flex items-center justify-between gap-4 px-4 py-3"
+            {/* Preset chips */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                {
+                  key: "standard",
+                  label: "Mon–Sat 9–8",
+                  icon: <Sun className="h-3.5 w-3.5" />,
+                  apply: () =>
+                    setSchedule((prev) =>
+                      prev.map((d) => ({
+                        ...d,
+                        open: d.day !== "Sun",
+                        from: "09:00",
+                        to: "20:00",
+                      })),
+                    ),
+                },
+                {
+                  key: "weekday",
+                  label: "Weekdays only",
+                  icon: <Coffee className="h-3.5 w-3.5" />,
+                  apply: () =>
+                    setSchedule((prev) =>
+                      prev.map((d) => ({
+                        ...d,
+                        open: !["Sat", "Sun"].includes(d.day),
+                        from: "10:00",
+                        to: "19:00",
+                      })),
+                    ),
+                },
+                {
+                  key: "everyday",
+                  label: "Open every day",
+                  icon: <Sparkles className="h-3.5 w-3.5" />,
+                  apply: () =>
+                    setSchedule((prev) =>
+                      prev.map((d) => ({
+                        ...d,
+                        open: true,
+                        from: "10:00",
+                        to: "22:00",
+                      })),
+                    ),
+                },
+                {
+                  key: "evening",
+                  label: "Evenings",
+                  icon: <Moon className="h-3.5 w-3.5" />,
+                  apply: () =>
+                    setSchedule((prev) =>
+                      prev.map((d) => ({
+                        ...d,
+                        open: d.day !== "Sun",
+                        from: "14:00",
+                        to: "23:00",
+                      })),
+                    ),
+                },
+              ].map((p) => (
+                <button
+                  key={p.key}
+                  onClick={p.apply}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted"
                 >
-                  <div className="flex items-center gap-3">
-                    <Toggle
-                      checked={d.open}
-                      onChange={(v) => updateSchedule(d.day, { open: v })}
-                    />
-                    <span
+                  {p.icon}
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Day rows */}
+            <div className="space-y-2">
+              {schedule.map((d) => {
+                const firstOpen = schedule.find((x) => x.open);
+                return (
+                  <motion.div
+                    key={d.day}
+                    layout
+                    transition={{ duration: 0.2 }}
+                    className={cn(
+                      "group relative flex flex-wrap items-center gap-3 rounded-2xl border p-3 sm:p-4 transition-[var(--transition-smooth)]",
+                      d.open
+                        ? "border-border bg-card shadow-[var(--shadow-soft)]"
+                        : "border-dashed border-border bg-muted/30",
+                    )}
+                  >
+                    {/* Day pill */}
+                    <button
+                      onClick={() => updateSchedule(d.day, { open: !d.open })}
                       className={cn(
-                        "w-12 text-sm font-medium",
-                        d.open ? "text-foreground" : "text-muted-foreground",
+                        "flex h-11 w-14 shrink-0 flex-col items-center justify-center rounded-xl border text-[11px] font-semibold uppercase tracking-wider transition-[var(--transition-smooth)]",
+                        d.open
+                          ? "border-foreground bg-foreground text-background"
+                          : "border-border bg-background text-muted-foreground hover:border-foreground/40",
                       )}
                     >
                       {d.day}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                    </button>
+
                     {d.open ? (
                       <>
-                        <TimeInput
-                          value={d.from}
-                          onChange={(v) => updateSchedule(d.day, { from: v })}
-                        />
-                        <span className="text-xs text-muted-foreground">–</span>
-                        <TimeInput
-                          value={d.to}
-                          onChange={(v) => updateSchedule(d.day, { to: v })}
-                        />
+                        <div className="flex flex-1 items-center gap-2">
+                          <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-1.5">
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                              Open
+                            </span>
+                            <TimeInput
+                              value={d.from}
+                              onChange={(v) => updateSchedule(d.day, { from: v })}
+                            />
+                          </div>
+                          <span className="text-muted-foreground">→</span>
+                          <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-1.5">
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                              Close
+                            </span>
+                            <TimeInput
+                              value={d.to}
+                              onChange={(v) => updateSchedule(d.day, { to: v })}
+                            />
+                          </div>
+                        </div>
+
+                        {firstOpen && firstOpen.day !== d.day && (
+                          <button
+                            onClick={() =>
+                              updateSchedule(d.day, {
+                                from: firstOpen.from,
+                                to: firstOpen.to,
+                              })
+                            }
+                            title={`Copy from ${firstOpen.day}`}
+                            className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:text-foreground"
+                          >
+                            <Copy className="h-3 w-3" /> {firstOpen.day}
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() =>
+                            setSchedule((prev) =>
+                              prev.map((x) => ({ ...x, from: d.from, to: d.to, open: x.open })),
+                            )
+                          }
+                          title="Apply these hours to all open days"
+                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:text-foreground"
+                        >
+                          <Copy className="h-3 w-3" /> All
+                        </button>
                       </>
                     ) : (
-                      <span className="text-xs font-medium text-muted-foreground">
-                        Closed
-                      </span>
+                      <div className="flex flex-1 items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Closed all day
+                        </span>
+                        <button
+                          onClick={() => updateSchedule(d.day, { open: true })}
+                          className="text-[10px] font-semibold uppercase tracking-wider text-foreground hover:underline"
+                        >
+                          Open
+                        </button>
+                      </div>
                     )}
-                  </div>
-                </div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              Tip: Tap the day name to toggle open/closed. Use{" "}
+              <span className="font-medium text-foreground">All</span> to copy hours to every open day.
+            </p>
           </Section>
             )}
 

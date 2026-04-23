@@ -451,8 +451,9 @@ export function CreateSalonPage() {
               </div>
             </div>
           </Section>
+            )}
 
-          {/* Section: Media */}
+            {step === 5 && (
           <Section
             icon={<ImageIcon className="h-4 w-4" />}
             label="06"

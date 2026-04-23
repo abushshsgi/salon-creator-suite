@@ -13,6 +13,8 @@ import {
   Loader2,
   UploadCloud,
   X,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +41,7 @@ const LANGUAGES = [
   { code: "ar", label: "Arabic" },
 ];
 
-const STEPS = ["Profile", "Location", "Services", "Schedule", "Media"];
+const STEPS = ["Profile", "Location", "Services", "Schedule", "Extras", "Media"];
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -76,6 +78,8 @@ export function CreateSalonPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState(1);
 
   const isValid = useMemo(() => {
     return (
@@ -86,19 +90,42 @@ export function CreateSalonPage() {
     );
   }, [name, phone, address, services]);
 
-  const completedSteps = useMemo(() => {
-    const flags = [
-      name.trim() && phone.trim() && address.trim(),
-      lat && lng,
+  const stepValid = useMemo(() => {
+    return [
+      Boolean(name.trim() && phone.trim() && address.trim()),
+      Boolean(lat && lng),
       services.every((s) => s.name && s.price && s.duration),
       schedule.some((d) => d.open),
-      cover || gallery.length > 0,
+      languages.length > 0,
+      Boolean(cover || gallery.length > 0),
     ];
-    return flags.map(Boolean);
-  }, [name, phone, address, lat, lng, services, schedule, cover, gallery]);
+  }, [name, phone, address, lat, lng, services, schedule, languages, cover, gallery]);
 
-  const activeStep = completedSteps.findIndex((c) => !c);
-  const currentStep = activeStep === -1 ? STEPS.length - 1 : activeStep;
+  const completedSteps = useMemo(
+    () => stepValid.map((v, i) => v && i < step),
+    [stepValid, step],
+  );
+
+  const canNext = stepValid[step];
+  const isLast = step === STEPS.length - 1;
+
+  const goNext = () => {
+    if (!canNext || isLast) return;
+    setDirection(1);
+    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const goBack = () => {
+    if (step === 0) return;
+    setDirection(-1);
+    setStep((s) => Math.max(0, s - 1));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const updateService = (id: string, key: keyof Service, value: string) =>
     setServices((prev) => prev.map((s) => (s.id === id ? { ...s, [key]: value } : s)));
@@ -152,10 +179,10 @@ export function CreateSalonPage() {
             <span className="text-sm font-semibold tracking-tight">Barber Studio</span>
           </div>
           <span className="text-xs font-medium text-muted-foreground">
-            Step {currentStep + 1} of {STEPS.length}
+            Step {step + 1} of {STEPS.length}
           </span>
         </div>
-        <ProgressBar steps={STEPS} completed={completedSteps} current={currentStep} />
+        <ProgressBar steps={STEPS} completed={completedSteps} current={step} />
       </header>
 
       <main className="mx-auto max-w-[900px] px-6 pt-12">
@@ -174,8 +201,17 @@ export function CreateSalonPage() {
           </p>
         </motion.div>
 
-        <div className="space-y-6">
-          {/* Section: Basic Info */}
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            initial={{ opacity: 0, x: direction > 0 ? 40 : -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? -40 : 40 }}
+            transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
+            {step === 0 && (
           <Section
             icon={<Building2 className="h-4 w-4" />}
             label="01"
@@ -198,8 +234,9 @@ export function CreateSalonPage() {
               onChange={setDescription}
             />
           </Section>
+            )}
 
-          {/* Section: Location */}
+            {step === 1 && (
           <Section
             icon={<MapPin className="h-4 w-4" />}
             label="02"
@@ -235,8 +272,9 @@ export function CreateSalonPage() {
               </div>
             </div>
           </Section>
+            )}
 
-          {/* Section: Services */}
+            {step === 2 && (
           <Section
             icon={<Scissors className="h-4 w-4" />}
             label="03"
@@ -301,8 +339,9 @@ export function CreateSalonPage() {
               </button>
             </div>
           </Section>
+            )}
 
-          {/* Section: Working Hours */}
+            {step === 3 && (
           <Section
             icon={<Clock className="h-4 w-4" />}
             label="04"
@@ -352,8 +391,9 @@ export function CreateSalonPage() {
               ))}
             </div>
           </Section>
+            )}
 
-          {/* Section: Additional */}
+            {step === 4 && (
           <Section
             icon={<Globe2 className="h-4 w-4" />}
             label="05"
@@ -411,8 +451,9 @@ export function CreateSalonPage() {
               </div>
             </div>
           </Section>
+            )}
 
-          {/* Section: Media */}
+            {step === 5 && (
           <Section
             icon={<ImageIcon className="h-4 w-4" />}
             label="06"
@@ -490,43 +531,75 @@ export function CreateSalonPage() {
               )}
             </div>
           </Section>
-        </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Sticky bottom action bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[900px] items-center justify-between gap-4 px-6 py-4">
-          <p className="text-xs text-muted-foreground">
-            {isValid ? (
-              <span className="flex items-center gap-1.5 font-medium text-foreground">
-                <Check className="h-3.5 w-3.5" /> Ready to create
-              </span>
-            ) : (
-              "Please fill all required fields"
-            )}
-          </p>
+        <div className="mx-auto flex max-w-[900px] items-center justify-between gap-3 px-6 py-4">
           <button
-            disabled={!isValid || submitting}
-            onClick={handleSubmit}
+            onClick={goBack}
+            disabled={step === 0 || submitting}
             className={cn(
-              "group relative inline-flex h-11 min-w-[160px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
-              isValid && !submitting
-                ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
-                : "cursor-not-allowed bg-muted text-muted-foreground",
+              "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-[var(--transition-smooth)]",
+              step === 0
+                ? "cursor-not-allowed opacity-40"
+                : "hover:bg-muted hover:scale-[1.02] active:scale-[0.98]",
             )}
           >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Creating…
-              </>
-            ) : success ? (
-              <>
-                <Check className="h-4 w-4" /> Created
-              </>
-            ) : (
-              <>Create Salon</>
-            )}
+            <ArrowLeft className="h-4 w-4" /> Back
           </button>
+
+          <p className="hidden text-xs text-muted-foreground sm:block">
+            {canNext ? (
+              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                <Check className="h-3.5 w-3.5" />
+                {isLast ? "Ready to create" : `Step ${step + 1} complete`}
+              </span>
+            ) : (
+              "Please fill required fields"
+            )}
+          </p>
+
+          {isLast ? (
+            <button
+              disabled={!isValid || submitting}
+              onClick={handleSubmit}
+              className={cn(
+                "group relative inline-flex h-11 min-w-[160px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
+                isValid && !submitting
+                  ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
+                  : "cursor-not-allowed bg-muted text-muted-foreground",
+              )}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Creating…
+                </>
+              ) : success ? (
+                <>
+                  <Check className="h-4 w-4" /> Created
+                </>
+              ) : (
+                <>Create Salon</>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={goNext}
+              disabled={!canNext}
+              className={cn(
+                "inline-flex h-11 min-w-[140px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
+                canNext
+                  ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
+                  : "cursor-not-allowed bg-muted text-muted-foreground",
+              )}
+            >
+              Continue <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

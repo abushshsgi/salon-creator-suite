@@ -339,8 +339,9 @@ export function CreateSalonPage() {
               </button>
             </div>
           </Section>
+            )}
 
-          {/* Section: Working Hours */}
+            {step === 3 && (
           <Section
             icon={<Clock className="h-4 w-4" />}
             label="04"

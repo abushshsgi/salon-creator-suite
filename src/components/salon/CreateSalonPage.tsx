@@ -287,6 +287,35 @@ export function CreateSalonPage() {
             description="What do you offer?"
           >
             <div className="space-y-3">
+              {/* Quick add presets */}
+              <div className="flex flex-wrap gap-2 pb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground self-center mr-1">
+                  Quick add
+                </span>
+                {[
+                  { name: "Haircut", price: "20", duration: "30" },
+                  { name: "Beard trim", price: "15", duration: "20" },
+                  { name: "Shave", price: "18", duration: "25" },
+                  { name: "Hair + Beard", price: "32", duration: "45" },
+                  { name: "Kids cut", price: "12", duration: "20" },
+                ].map((p) => (
+                  <button
+                    key={p.name}
+                    onClick={() =>
+                      setServices((prev) => {
+                        const last = prev[prev.length - 1];
+                        const empty = last && !last.name && !last.price && !last.duration;
+                        const next = { id: uid(), ...p };
+                        return empty ? [...prev.slice(0, -1), next] : [...prev, next];
+                      })
+                    }
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted"
+                  >
+                    <Sparkles className="h-3 w-3" /> {p.name}
+                  </button>
+                ))}
+              </div>
+
               <AnimatePresence initial={false}>
                 {services.map((s, i) => (
                   <motion.div
@@ -319,13 +348,13 @@ export function CreateSalonPage() {
                           compact
                         />
                         <FloatingInput
-                          label="Price"
+                          label="Price ($)"
                           value={s.price}
                           onChange={(v) => updateService(s.id, "price", v)}
                           compact
                         />
                         <FloatingInput
-                          label="Min"
+                          label="Duration (min)"
                           value={s.duration}
                           onChange={(v) => updateService(s.id, "duration", v)}
                           compact
@@ -337,10 +366,12 @@ export function CreateSalonPage() {
               </AnimatePresence>
               <button
                 onClick={addService}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-transparent px-4 py-3.5 text-sm font-medium text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/40 hover:text-foreground"
+                className="group flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-transparent px-4 py-4 text-sm font-semibold text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-[0.99]"
               >
-                <Plus className="h-4 w-4" />
-                Add service
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-background transition-transform group-hover:rotate-90">
+                  <Plus className="h-4 w-4" />
+                </span>
+                Add new service
               </button>
             </div>
           </Section>

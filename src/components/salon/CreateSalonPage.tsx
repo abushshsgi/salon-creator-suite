@@ -201,8 +201,17 @@ export function CreateSalonPage() {
           </p>
         </motion.div>
 
-        <div className="space-y-6">
-          {/* Section: Basic Info */}
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            initial={{ opacity: 0, x: direction > 0 ? 40 : -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? -40 : 40 }}
+            transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+            className="space-y-6"
+          >
+            {step === 0 && (
           <Section
             icon={<Building2 className="h-4 w-4" />}
             label="01"
@@ -225,8 +234,9 @@ export function CreateSalonPage() {
               onChange={setDescription}
             />
           </Section>
+            )}
 
-          {/* Section: Location */}
+            {step === 1 && (
           <Section
             icon={<MapPin className="h-4 w-4" />}
             label="02"

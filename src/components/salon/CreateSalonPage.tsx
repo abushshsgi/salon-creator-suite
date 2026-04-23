@@ -179,10 +179,10 @@ export function CreateSalonPage() {
             <span className="text-sm font-semibold tracking-tight">Barber Studio</span>
           </div>
           <span className="text-xs font-medium text-muted-foreground">
-            Step {currentStep + 1} of {STEPS.length}
+            Step {step + 1} of {STEPS.length}
           </span>
         </div>
-        <ProgressBar steps={STEPS} completed={completedSteps} current={currentStep} />
+        <ProgressBar steps={STEPS} completed={completedSteps} current={step} />
       </header>
 
       <main className="mx-auto max-w-[900px] px-6 pt-12">

@@ -15,6 +15,11 @@ import {
   X,
   ArrowLeft,
   ArrowRight,
+  Copy,
+  Sun,
+  Moon,
+  Coffee,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

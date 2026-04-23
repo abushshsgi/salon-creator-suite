@@ -272,8 +272,9 @@ export function CreateSalonPage() {
               </div>
             </div>
           </Section>
+            )}
 
-          {/* Section: Services */}
+            {step === 2 && (
           <Section
             icon={<Scissors className="h-4 w-4" />}
             label="03"

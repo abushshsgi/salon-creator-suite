@@ -1547,7 +1547,7 @@ function ScheduleEditor({
         <div className="relative mb-4 flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background shadow-[var(--shadow-soft)]">
-              <CalendarDays className="h-4.5 w-4.5" />
+              <CalendarDays className="h-4 w-4" />
             </div>
             <div className="leading-tight">
               <div className="flex items-baseline gap-1.5">

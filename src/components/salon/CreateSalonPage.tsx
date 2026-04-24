@@ -94,6 +94,8 @@ export function CreateSalonPage() {
   const [salonDescription, setSalonDescription] = useState("");
   const [salonPhoneDigits, setSalonPhoneDigits] = useState("");
   const [salonAddress, setSalonAddress] = useState("");
+  const [salonCity, setSalonCity] = useState("");
+  const [salonLandmark, setSalonLandmark] = useState("");
   const [cover, setCover] = useState<string | null>(null);
   const [coverDrag, setCoverDrag] = useState(false);
 
@@ -129,8 +131,9 @@ export function CreateSalonPage() {
     () =>
       salonName.trim().length > 1 &&
       salonPhoneDigits.length === 9 &&
+      salonCity.trim().length > 1 &&
       salonAddress.trim().length > 2,
-    [salonName, salonPhoneDigits, salonAddress],
+    [salonName, salonPhoneDigits, salonCity, salonAddress],
   );
 
   const barberValid = useMemo(

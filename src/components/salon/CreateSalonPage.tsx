@@ -1492,145 +1492,219 @@ function ScheduleEditor({
     setSchedule((prev) => prev.map((d) => ({ ...d, ...patch })));
 
   const openCount = schedule.filter((d) => d.open).length;
+  const openDays = schedule.filter((d) => d.open);
+  const earliest = openDays.reduce<string>((acc, d) => (!acc || d.from < acc ? d.from : acc), "");
+  const latest = openDays.reduce<string>((acc, d) => (!acc || d.to > acc ? d.to : acc), "");
+
+  const PRESETS = [
+    {
+      key: "weekdays",
+      label: "Ish kunlari",
+      sub: "Du–Ju · 9–20",
+      apply: () =>
+        setSchedule((prev) =>
+          prev.map((d) => ({
+            ...d,
+            open: !["Sat", "Sun"].includes(d.day),
+            from: "09:00",
+            to: "20:00",
+          })),
+        ),
+    },
+    {
+      key: "everyday",
+      label: "Har kuni",
+      sub: "Du–Yak · 10–22",
+      apply: () => applyAll({ open: true, from: "10:00", to: "22:00" }),
+    },
+    {
+      key: "longweek",
+      label: "Uzun hafta",
+      sub: "Du–Sha · 10–21",
+      apply: () =>
+        setSchedule((prev) =>
+          prev.map((d) => ({
+            ...d,
+            open: !["Sun"].includes(d.day),
+            from: "10:00",
+            to: "21:00",
+          })),
+        ),
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      {/* Hero summary card — visual week overview */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-muted/40 to-card p-4 sm:p-5">
-        <div className="mb-3 flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-5">
+      {/* HERO SUMMARY — chips + animated bar chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-foreground/[0.04] via-card to-card p-4 sm:p-5"
+      >
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-foreground/[0.04] blur-3xl" />
+
+        <div className="relative mb-4 flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background shadow-[var(--shadow-soft)]">
-              <CalendarDays className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background shadow-[var(--shadow-soft)]">
+              <CalendarDays className="h-4.5 w-4.5" />
             </div>
             <div className="leading-tight">
-              <div className="text-sm font-bold text-foreground tabular-nums">
-                {openCount}/7 kun ishlaysiz
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
+                  {openCount}
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground">/ 7 kun</span>
               </div>
-              <div className="text-[10px] text-muted-foreground">
-                {7 - openCount > 0 ? `${7 - openCount} dam olish kuni` : "Dam olishsiz"}
+              <div className="text-[11px] text-muted-foreground">
+                {openCount === 0
+                  ? "Hech qanday ish kuni tanlanmagan"
+                  : openCount === 7
+                    ? "Dam olish kunisiz ishlaysiz"
+                    : `${7 - openCount} kun dam olasiz`}
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Hafta</div>
-            <div className="text-[10px] font-medium text-foreground">Du · Du · Yak</div>
-          </div>
-        </div>
-        {/* Mini week visual */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
-          {schedule.map((d) => (
-            <button
-              key={`mini-${d.day}`}
-              onClick={() => update(d.day, { open: !d.open })}
-              className={cn(
-                "group flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg text-[10px] font-bold transition-[var(--transition-smooth)] active:scale-95",
-                d.open
-                  ? "bg-foreground text-background shadow-[var(--shadow-soft)] hover:opacity-90"
-                  : "bg-background text-muted-foreground hover:bg-muted",
-              )}
-              title={WEEKDAY_LABELS[d.day]}
+
+          {openCount > 0 && earliest && (
+            <motion.div
+              key={`${earliest}-${latest}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1.5 text-[10px] font-bold text-foreground shadow-[var(--shadow-soft)] backdrop-blur"
             >
-              <span>{WEEKDAY_LABELS[d.day]?.slice(0, 2)}</span>
-              {d.open && (
-                <span className="text-[8px] font-medium opacity-70 tabular-nums">
-                  {d.from.slice(0, 2)}
-                </span>
-              )}
+              <Clock className="h-3 w-3" />
+              <span className="tabular-nums">
+                {earliest}–{latest}
+              </span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Big tap-friendly day chips */}
+        <div className="relative grid grid-cols-7 gap-1 sm:gap-1.5">
+          {schedule.map((d) => {
+            const dayLabel = WEEKDAY_LABELS[d.day]?.slice(0, 2) ?? d.day;
+            return (
+              <motion.button
+                key={`mini-${d.day}`}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => update(d.day, { open: !d.open })}
+                className={cn(
+                  "relative flex aspect-square flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] font-bold transition-colors",
+                  d.open
+                    ? "bg-foreground text-background shadow-[var(--shadow-soft)]"
+                    : "border border-dashed border-border bg-background text-muted-foreground",
+                )}
+                title={WEEKDAY_LABELS[d.day]}
+              >
+                <span className="leading-none">{dayLabel}</span>
+                <AnimatePresence initial={false}>
+                  {d.open ? (
+                    <motion.span
+                      key="hours"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.18 }}
+                      className="text-[8px] font-medium tabular-nums opacity-80"
+                    >
+                      {d.from.slice(0, 2)}
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="off"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-[8px] font-medium opacity-50"
+                    >
+                      ·
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      {/* PRESET CARDS — large, visual */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <Sparkles className="h-3 w-3" /> Tayyor jadval
+          </div>
+          {openCount > 0 && (
+            <button
+              onClick={() => applyAll({ open: false })}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:text-destructive"
+            >
+              <X className="h-3 w-3" /> Tozalash
             </button>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          {PRESETS.map((p) => (
+            <motion.button
+              key={p.key}
+              whileTap={{ scale: 0.96 }}
+              onClick={p.apply}
+              className="group flex flex-col items-start gap-0.5 rounded-2xl border border-border bg-card p-2.5 text-left transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/50 sm:p-3"
+            >
+              <span className="text-[12px] font-bold leading-tight text-foreground sm:text-sm">
+                {p.label}
+              </span>
+              <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
+                {p.sub}
+              </span>
+            </motion.button>
           ))}
         </div>
       </div>
 
-      {/* Quick presets */}
-      <div>
-        <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <Sparkles className="h-3 w-3" /> Tezkor jadval
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() =>
-              setSchedule((prev) =>
-                prev.map((d) => ({
-                  ...d,
-                  open: !["Sat", "Sun"].includes(d.day),
-                  from: "09:00",
-                  to: "20:00",
-                })),
-              )
-            }
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-95"
-          >
-            <span className="font-bold">Du–Ju</span>
-            <span className="text-muted-foreground">9:00–20:00</span>
-          </button>
-          <button
-            onClick={() => applyAll({ open: true, from: "10:00", to: "22:00" })}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-95"
-          >
-            <span className="font-bold">Har kuni</span>
-            <span className="text-muted-foreground">10:00–22:00</span>
-          </button>
-          <button
-            onClick={() =>
-              setSchedule((prev) =>
-                prev.map((d) => ({
-                  ...d,
-                  open: !["Sun"].includes(d.day),
-                  from: "10:00",
-                  to: "21:00",
-                })),
-              )
-            }
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-95"
-          >
-            <span className="font-bold">Du–Sha</span>
-            <span className="text-muted-foreground">10:00–21:00</span>
-          </button>
-          <button
-            onClick={() => applyAll({ open: false })}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition-[var(--transition-smooth)] hover:border-destructive/40 hover:text-destructive active:scale-95"
-          >
-            <X className="h-3 w-3" /> Tozalash
-          </button>
-        </div>
-      </div>
-
-      {/* Day rows — clean, large hit areas */}
-      <div className="space-y-2">
-        {schedule.map((d) => (
+      {/* DAY ROWS — collapsible, animated time editor */}
+      <div className="space-y-1.5 sm:space-y-2">
+        {schedule.map((d, idx) => (
           <motion.div
             key={d.day}
-            layout
-            transition={{ duration: 0.22 }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, delay: idx * 0.03 }}
+            layout="position"
             className={cn(
-              "overflow-hidden rounded-2xl border transition-[var(--transition-smooth)]",
+              "overflow-hidden rounded-2xl border transition-colors",
               d.open
                 ? "border-border bg-card shadow-[var(--shadow-soft)]"
-                : "border-border/60 bg-muted/20",
+                : "border-dashed border-border/70 bg-muted/20",
             )}
           >
-            <div className="flex items-center gap-3 p-3 sm:gap-4 sm:p-3.5">
-              {/* Day label + toggle */}
-              <button
-                onClick={() => update(d.day, { open: !d.open })}
-                className="flex shrink-0 items-center gap-3"
+            {/* Header row — full-width tap target */}
+            <button
+              type="button"
+              onClick={() => update(d.day, { open: !d.open })}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/30 sm:px-4 sm:py-3"
+            >
+              {/* Toggle */}
+              <span
+                className={cn(
+                  "relative inline-flex h-7 w-[46px] shrink-0 items-center rounded-full transition-colors",
+                  d.open ? "bg-foreground" : "bg-muted",
+                )}
               >
-                <span
+                <motion.span
+                  layout
+                  transition={{ type: "spring", stiffness: 600, damping: 32 }}
                   className={cn(
-                    "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors",
-                    d.open ? "bg-foreground" : "bg-muted",
+                    "inline-block h-5 w-5 rounded-full bg-background shadow-[var(--shadow-soft)]",
+                    d.open ? "ml-[24px]" : "ml-1",
                   )}
-                >
-                  <motion.span
-                    layout
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    className={cn(
-                      "inline-block h-5 w-5 rounded-full bg-background shadow-[var(--shadow-soft)]",
-                      d.open ? "ml-[26px]" : "ml-1",
-                    )}
-                  />
-                </span>
-                <div className="flex flex-col items-start leading-tight">
+                />
+              </span>
+
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                <div className="flex flex-col leading-tight">
                   <span
                     className={cn(
                       "text-sm font-bold",
@@ -1640,59 +1714,77 @@ function ScheduleEditor({
                     {WEEKDAY_LABELS[d.day]}
                   </span>
                   <span className="text-[10px] font-medium text-muted-foreground">
-                    {d.open ? "Ish kuni" : "Dam olish"}
+                    {d.open ? "Ochiq" : "Dam olish"}
                   </span>
                 </div>
-              </button>
 
-              {/* Time slots or closed label */}
-              <div className="flex flex-1 items-center justify-end">
                 <AnimatePresence mode="wait" initial={false}>
                   {d.open ? (
-                    <motion.div
-                      key="open"
-                      initial={{ opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 8 }}
+                    <motion.span
+                      key="hrs"
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.92 }}
                       transition={{ duration: 0.18 }}
-                      className="flex items-center gap-1.5 sm:gap-2"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-[11px] font-bold tabular-nums text-foreground"
                     >
-                      <TimeField
-                        value={d.from}
-                        onChange={(v) => update(d.day, { from: v })}
-                      />
-                      <span className="text-xs font-medium text-muted-foreground">→</span>
-                      <TimeField value={d.to} onChange={(v) => update(d.day, { to: v })} />
-                      <button
-                        onClick={() =>
-                          setSchedule((prev) =>
-                            prev.map((x) =>
-                              x.open ? { ...x, from: d.from, to: d.to } : x,
-                            ),
-                          )
-                        }
-                        className="ml-1 hidden h-9 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:text-foreground sm:inline-flex"
-                        title="Boshqa ish kunlariga ham qo'llash"
-                      >
-                        Barchaga
-                      </button>
-                    </motion.div>
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      {d.from} – {d.to}
+                    </motion.span>
                   ) : (
                     <motion.span
-                      key="closed"
+                      key="cls"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.18 }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-                      Yopiq
-                    </motion.span>
+                      className="inline-flex h-1.5 w-1.5 rounded-full bg-muted-foreground/40"
+                    />
                   )}
                 </AnimatePresence>
               </div>
-            </div>
+            </button>
+
+            {/* Expandable time editor */}
+            <AnimatePresence initial={false}>
+              {d.open && (
+                <motion.div
+                  key="editor"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-border/60 px-3 py-3 sm:px-4">
+                    <div className="flex items-stretch gap-2">
+                      <TimeField
+                        label="Ochilish"
+                        value={d.from}
+                        onChange={(v) => update(d.day, { from: v })}
+                      />
+                      <TimeField
+                        label="Yopilish"
+                        value={d.to}
+                        onChange={(v) => update(d.day, { to: v })}
+                      />
+                    </div>
+                    <button
+                      onClick={() =>
+                        setSchedule((prev) =>
+                          prev.map((x) =>
+                            x.open ? { ...x, from: d.from, to: d.to } : x,
+                          ),
+                        )
+                      }
+                      className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-transparent px-3 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Barcha ish kunlariga qo'llash
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ))}
       </div>
@@ -1701,22 +1793,31 @@ function ScheduleEditor({
 }
 
 function TimeField({
+  label,
   value,
   onChange,
 }: {
+  label?: string;
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex flex-1 items-center rounded-lg border border-border bg-background transition-[var(--transition-smooth)] focus-within:border-foreground">
-      <Clock className="ml-2.5 h-3 w-3 text-muted-foreground" />
-      <input
-        type="time"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-full bg-transparent px-2 text-xs font-medium tabular-nums text-foreground outline-none"
-      />
-    </div>
+    <label className="group relative flex flex-1 cursor-pointer flex-col rounded-xl border border-border bg-background px-3 py-2 transition-colors focus-within:border-foreground hover:border-foreground/40">
+      {label && (
+        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+      )}
+      <div className="flex items-center gap-1.5">
+        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+        <input
+          type="time"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-transparent text-sm font-bold tabular-nums text-foreground outline-none [color-scheme:light] dark:[color-scheme:dark]"
+        />
+      </div>
+    </label>
   );
 }
 

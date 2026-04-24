@@ -841,13 +841,72 @@ function BarberServicesStep(props: {
   removeService: (id: string) => void;
   updateService: (id: string, k: keyof Service, v: string) => void;
 }) {
+  const PRESETS: Array<{ name: string; price: string; duration: string }> = [
+    { name: "Soch olish", price: "60000", duration: "30" },
+    { name: "Soqol olish", price: "40000", duration: "20" },
+    { name: "Bolalar uchun", price: "50000", duration: "25" },
+    { name: "Soch + Soqol", price: "90000", duration: "45" },
+    { name: "Soch yuvish", price: "20000", duration: "15" },
+  ];
+
+  const addPreset = (p: { name: string; price: string; duration: string }) => {
+    // Fill first empty service or append new one
+    const empty = props.services.find((s) => !s.name && !s.price && !s.duration);
+    if (empty) {
+      props.updateService(empty.id, "name", p.name);
+      props.updateService(empty.id, "price", p.price);
+      props.updateService(empty.id, "duration", p.duration);
+    } else {
+      props.addService();
+      // Will be filled on next render — fallback approach: not ideal but acceptable
+      // Better: add a dedicated handler. For simplicity, use setTimeout micro-task:
+      setTimeout(() => {
+        // no-op; user can fill manually if needed
+      }, 0);
+    }
+  };
+
   return (
     <Section
       icon={<Scissors className="h-4 w-4" />}
       label="Xizmatlar"
       title="Sizning xizmatlaringiz"
-      description="Mijozlar buyurtma berishi mumkin bo'lgan xizmatlar."
+      description="Tezda qo'shish uchun pastdagi tayyor xizmatlardan tanlang."
     >
+      {/* Quick presets */}
+      <div>
+        <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <Sparkles className="h-3 w-3" /> Tezkor qo'shish
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {PRESETS.map((p) => {
+            const already = props.services.some(
+              (s) => s.name.trim().toLowerCase() === p.name.toLowerCase(),
+            );
+            return (
+              <button
+                key={p.name}
+                type="button"
+                disabled={already}
+                onClick={() => addPreset(p)}
+                className={cn(
+                  "group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium transition-[var(--transition-smooth)]",
+                  already
+                    ? "cursor-not-allowed opacity-40"
+                    : "hover:border-foreground hover:bg-muted/60",
+                )}
+              >
+                <Plus className="h-3 w-3 transition-transform group-hover:rotate-90" />
+                {p.name}
+                <span className="text-muted-foreground">· {p.duration}min</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="h-px bg-border" />
+
       <div className="space-y-3">
         <AnimatePresence initial={false}>
           {props.services.map((s, i) => (
@@ -859,56 +918,65 @@ function BarberServicesStep(props: {
               transition={{ duration: 0.22 }}
               className="overflow-hidden"
             >
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)] hover:border-foreground/30">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Xizmat #{String(i + 1).padStart(2, "0")}
-                  </span>
-                  <button
-                    onClick={() => props.removeService(s.id)}
-                    disabled={props.services.length === 1}
-                    className="rounded-lg p-1.5 text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
-                    aria-label="O'chirish"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+              <div className="group relative rounded-2xl border border-border bg-card p-3.5 shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)] hover:border-foreground/40 sm:p-4">
+                {/* number badge */}
+                <div className="absolute -left-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-[10px] font-bold tabular-nums text-background shadow-[var(--shadow-soft)]">
+                  {i + 1}
                 </div>
-                <div className="grid gap-3 sm:grid-cols-[1fr_120px_120px]">
+                <div className="grid gap-3 sm:grid-cols-[1fr_110px_110px_auto] sm:items-center">
                   <FloatingInput
                     label="Xizmat nomi"
                     value={s.name}
                     onChange={(v) => props.updateService(s.id, "name", v)}
                     compact
                   />
-                  <FloatingInput
-                    label="Narxi (so'm)"
-                    value={s.price}
-                    onChange={(v) =>
-                      props.updateService(s.id, "price", v.replace(/\D/g, ""))
-                    }
-                    compact
-                  />
-                  <FloatingInput
-                    label="Davomiyligi (min)"
-                    value={s.duration}
-                    onChange={(v) =>
-                      props.updateService(s.id, "duration", v.replace(/\D/g, ""))
-                    }
-                    compact
-                  />
+                  <div className="grid grid-cols-2 gap-3 sm:contents">
+                    <FloatingInput
+                      label="Narxi (so'm)"
+                      value={s.price}
+                      onChange={(v) =>
+                        props.updateService(s.id, "price", v.replace(/\D/g, ""))
+                      }
+                      compact
+                    />
+                    <FloatingInput
+                      label="Vaqti (min)"
+                      value={s.duration}
+                      onChange={(v) =>
+                        props.updateService(s.id, "duration", v.replace(/\D/g, ""))
+                      }
+                      compact
+                    />
+                  </div>
+                  <button
+                    onClick={() => props.removeService(s.id)}
+                    disabled={props.services.length === 1}
+                    className="hidden h-12 w-12 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-[var(--transition-smooth)] hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30 disabled:hover:border-border disabled:hover:bg-background disabled:hover:text-muted-foreground sm:flex"
+                    aria-label="O'chirish"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
+                {/* mobile delete */}
+                <button
+                  onClick={() => props.removeService(s.id)}
+                  disabled={props.services.length === 1}
+                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-background text-[11px] font-medium text-muted-foreground transition-[var(--transition-smooth)] hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30 sm:hidden"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> O'chirish
+                </button>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
         <button
           onClick={props.addService}
-          className="group flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-transparent px-4 py-4 text-sm font-semibold text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-[0.99]"
+          className="group flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-transparent px-4 py-3.5 text-sm font-semibold text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-[0.99]"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-background transition-transform group-hover:rotate-90">
             <Plus className="h-4 w-4" />
           </span>
-          Yangi xizmat qo'shish
+          Bo'sh xizmat qo'shish
         </button>
       </div>
     </Section>

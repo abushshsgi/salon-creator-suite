@@ -1774,3 +1774,186 @@ function DropzoneEmpty({ label }: { label: string }) {
     </div>
   );
 }
+
+/* ============================================================
+   Success overlay — full-screen celebration
+   ============================================================ */
+
+function SuccessOverlay({
+  salonName,
+  barberName,
+  onClose,
+}: {
+  salonName: string;
+  barberName: string;
+  onClose: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-background/85 backdrop-blur-xl px-4"
+    >
+      {/* Decorative confetti dots */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {Array.from({ length: 18 }).map((_, i) => {
+          const left = (i * 53) % 100;
+          const delay = (i % 6) * 0.08;
+          const size = 6 + (i % 4) * 2;
+          return (
+            <motion.span
+              key={i}
+              initial={{ y: -40, opacity: 0, rotate: 0 }}
+              animate={{
+                y: ["-10vh", "110vh"],
+                opacity: [0, 1, 1, 0],
+                rotate: 360,
+              }}
+              transition={{
+                duration: 2.6 + (i % 4) * 0.4,
+                delay,
+                ease: "easeIn",
+                repeat: 0,
+              }}
+              style={{
+                left: `${left}%`,
+                width: size,
+                height: size,
+              }}
+              className={cn(
+                "absolute rounded-sm",
+                i % 3 === 0
+                  ? "bg-foreground"
+                  : i % 3 === 1
+                    ? "bg-foreground/40"
+                    : "border border-foreground bg-background",
+              )}
+            />
+          );
+        })}
+      </div>
+
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 280, damping: 24 }}
+        className="relative w-full max-w-[420px] overflow-hidden rounded-3xl border border-border bg-card p-8 text-center shadow-[var(--shadow-pop)] sm:p-10"
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground"
+          aria-label="Yopish"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Animated checkmark */}
+        <div className="relative mx-auto mb-5 flex h-24 w-24 items-center justify-center">
+          {/* pulse rings */}
+          <motion.span
+            className="absolute inset-0 rounded-full bg-foreground/10"
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: [0.6, 1.4], opacity: [0.6, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
+          />
+          <motion.span
+            className="absolute inset-2 rounded-full bg-foreground/15"
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: [0.6, 1.3], opacity: [0.6, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
+          />
+          {/* core circle */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.1 }}
+            className="relative flex h-20 w-20 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)]"
+          >
+            <motion.svg
+              viewBox="0 0 32 32"
+              className="h-10 w-10"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={3.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <motion.path
+                d="M7 16.5 L13.5 23 L25 10"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+              />
+            </motion.svg>
+          </motion.div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.35 }}
+        >
+          <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+            <Sparkles className="h-2.5 w-2.5" />
+            Tabriklaymiz
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Muvaffaqiyatli yaratildi!
+          </h2>
+          <p className="mx-auto mt-2 max-w-[320px] text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              {salonName || "Salon"}
+            </span>{" "}
+            va barber profili tayyor. Endi mijozlar sizni topishi mumkin.
+          </p>
+        </motion.div>
+
+        {/* Summary card */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65, duration: 0.35 }}
+          className="mt-5 grid grid-cols-2 gap-2"
+        >
+          <div className="rounded-xl border border-border bg-muted/30 p-2.5 text-left">
+            <div className="mb-1 flex items-center gap-1.5">
+              <Store className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                Salon
+              </span>
+            </div>
+            <div className="truncate text-xs font-semibold text-foreground">
+              {salonName || "—"}
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-muted/30 p-2.5 text-left">
+            <div className="mb-1 flex items-center gap-1.5">
+              <User className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                Barber
+              </span>
+            </div>
+            <div className="truncate text-xs font-semibold text-foreground">
+              {barberName || "—"}
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.button
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.35 }}
+          onClick={onClose}
+          className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 text-sm font-semibold text-background transition-[var(--transition-smooth)] hover:scale-[1.02] active:scale-[0.98]"
+        >
+          Davom etish
+          <ArrowRight className="h-4 w-4" />
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  );
+}

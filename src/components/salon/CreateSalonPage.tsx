@@ -94,6 +94,8 @@ export function CreateSalonPage() {
   const [salonDescription, setSalonDescription] = useState("");
   const [salonPhoneDigits, setSalonPhoneDigits] = useState("");
   const [salonAddress, setSalonAddress] = useState("");
+  const [salonCity, setSalonCity] = useState("");
+  const [salonLandmark, setSalonLandmark] = useState("");
   const [cover, setCover] = useState<string | null>(null);
   const [coverDrag, setCoverDrag] = useState(false);
 
@@ -129,8 +131,9 @@ export function CreateSalonPage() {
     () =>
       salonName.trim().length > 1 &&
       salonPhoneDigits.length === 9 &&
+      salonCity.trim().length > 1 &&
       salonAddress.trim().length > 2,
-    [salonName, salonPhoneDigits, salonAddress],
+    [salonName, salonPhoneDigits, salonCity, salonAddress],
   );
 
   const barberValid = useMemo(
@@ -256,6 +259,10 @@ export function CreateSalonPage() {
                 setSalonPhoneDigits={setSalonPhoneDigits}
                 salonAddress={salonAddress}
                 setSalonAddress={setSalonAddress}
+                salonCity={salonCity}
+                setSalonCity={setSalonCity}
+                salonLandmark={salonLandmark}
+                setSalonLandmark={setSalonLandmark}
                 cover={cover}
                 setCover={setCover}
                 coverDrag={coverDrag}
@@ -370,19 +377,24 @@ function SalonStep(props: {
   setSalonPhoneDigits: (v: string) => void;
   salonAddress: string;
   setSalonAddress: (v: string) => void;
+  salonCity: string;
+  setSalonCity: (v: string) => void;
+  salonLandmark: string;
+  setSalonLandmark: (v: string) => void;
   cover: string | null;
   setCover: (v: string | null) => void;
   coverDrag: boolean;
   setCoverDrag: (v: boolean) => void;
   handleCoverFile: (f: FileList | null) => void;
 }) {
+  const coverInputRef = useRef<HTMLInputElement>(null);
   return (
     <>
       <Section
         icon={<Store className="h-4 w-4" />}
         label="Salon"
         title="Asosiy ma'lumotlar"
-        description="Salon nomi, manzili va aloqa raqami."
+        description="Salon nomi va aloqa raqami."
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <FloatingInput
@@ -398,12 +410,6 @@ function SalonStep(props: {
             onChange={props.setSalonPhoneDigits}
           />
         </div>
-        <FloatingInput
-          label="Manzil"
-          required
-          value={props.salonAddress}
-          onChange={props.setSalonAddress}
-        />
         <FloatingTextarea
           label="Salon haqida qisqacha"
           value={props.salonDescription}
@@ -412,38 +418,135 @@ function SalonStep(props: {
       </Section>
 
       <Section
+        icon={<MapPin className="h-4 w-4" />}
+        label="Lokatsiya"
+        title="Salon manzili"
+        description="Mijozlar sizni topa olishi uchun aniq manzil."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FloatingInput
+            label="Shahar"
+            required
+            value={props.salonCity}
+            onChange={props.setSalonCity}
+          />
+          <FloatingInput
+            label="Mo'ljal (ixtiyoriy)"
+            value={props.salonLandmark}
+            onChange={props.setSalonLandmark}
+          />
+        </div>
+        <FloatingInput
+          label="Ko'cha, uy raqami"
+          required
+          value={props.salonAddress}
+          onChange={props.setSalonAddress}
+        />
+        {/* Decorative map preview */}
+        <div className="relative mt-1 h-40 overflow-hidden rounded-2xl border border-border bg-muted/40">
+          <div
+            className="absolute inset-0 opacity-50"
+            style={{
+              backgroundImage:
+                "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+            }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="relative">
+                <div className="absolute -inset-2 animate-ping rounded-full bg-foreground/10" />
+                <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)]">
+                  <MapPin className="h-4 w-4" />
+                </div>
+              </div>
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {props.salonAddress.trim() || "Manzil ko'rsatilmagan"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section
         icon={<ImageIcon className="h-4 w-4" />}
         label="Media"
         title="Cover rasm"
         description="Salonni eng yaxshi tomondan ko'rsating."
       >
-        <Dropzone
-          drag={props.coverDrag}
-          setDrag={props.setCoverDrag}
-          onFiles={props.handleCoverFile}
-        >
-          {props.cover ? (
-            <div className="relative h-full w-full">
-              <img
-                src={props.cover}
-                alt="cover"
-                className="h-full w-full object-cover"
-              />
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  props.setCover(null);
-                }}
-                className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/80 text-background backdrop-blur transition-[var(--transition-smooth)] hover:bg-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            props.handleCoverFile(e.target.files);
+            // reset so same file can be re-selected
+            e.target.value = "";
+          }}
+        />
+        {props.cover ? (
+          <div className="group relative h-48 w-full overflow-hidden rounded-2xl border border-border bg-muted sm:h-56">
+            <img
+              src={props.cover}
+              alt="Salon cover"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent p-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur">
+                <Check className="h-3 w-3" /> Yuklandi
+              </span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full bg-background/90 px-3 text-[11px] font-semibold text-foreground backdrop-blur transition-[var(--transition-smooth)] hover:bg-background"
+                >
+                  <UploadCloud className="h-3 w-3" /> O'zgartirish
+                </button>
+                <button
+                  type="button"
+                  onClick={() => props.setCover(null)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-foreground backdrop-blur transition-[var(--transition-smooth)] hover:bg-destructive hover:text-destructive-foreground"
+                  aria-label="O'chirish"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-          ) : (
-            <DropzoneEmpty label="Cover rasmni shu yerga tashlang yoki tanlang" />
-          )}
-        </Dropzone>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => coverInputRef.current?.click()}
+            onDragOver={(e) => {
+              e.preventDefault();
+              props.setCoverDrag(true);
+            }}
+            onDragLeave={() => props.setCoverDrag(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              props.setCoverDrag(false);
+              props.handleCoverFile(e.dataTransfer.files);
+            }}
+            className={cn(
+              "group flex h-48 w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-muted/30 transition-[var(--transition-smooth)] sm:h-56",
+              props.coverDrag
+                ? "border-foreground bg-muted"
+                : "border-border hover:border-foreground/40 hover:bg-muted/50",
+            )}
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-background shadow-[var(--shadow-soft)] transition-transform group-hover:scale-110">
+              <UploadCloud className="h-5 w-5 text-foreground" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">
+              Cover rasm yuklash
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Surib qo'ying yoki bosing · PNG, JPG · 10MB gacha
+            </span>
+          </button>
+        )}
       </Section>
     </>
   );

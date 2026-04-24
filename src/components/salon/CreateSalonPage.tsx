@@ -273,13 +273,23 @@ export function CreateSalonPage() {
     await new Promise((r) => setTimeout(r, 1400));
     setSubmitting(false);
     setSuccess(true);
-    setTimeout(() => setSuccess(false), 2400);
   };
 
   const currentMeta = STEP_META[step];
 
   return (
     <div className="min-h-screen bg-background pb-32">
+      {/* Success overlay */}
+      <AnimatePresence>
+        {success && (
+          <SuccessOverlay
+            salonName={salonName}
+            barberName={`${barberFirstName} ${barberLastName}`.trim()}
+            onClose={() => setSuccess(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[920px] items-center justify-between px-5 py-4 sm:px-6">

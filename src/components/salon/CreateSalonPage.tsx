@@ -1492,15 +1492,19 @@ function ScheduleEditor({
     setSchedule((prev) => prev.map((d) => ({ ...d, ...patch })));
 
   const openCount = schedule.filter((d) => d.open).length;
-  const openDays = schedule.filter((d) => d.open);
-  const earliest = openDays.reduce<string>((acc, d) => (!acc || d.from < acc ? d.from : acc), "");
-  const latest = openDays.reduce<string>((acc, d) => (!acc || d.to > acc ? d.to : acc), "");
+
+  // Selected day for the time editor below.
+  const [selectedDay, setSelectedDay] = useState<string>(() => {
+    const firstOpen = schedule.find((d) => d.open);
+    return firstOpen?.day ?? schedule[0].day;
+  });
+  const selected = schedule.find((d) => d.day === selectedDay) ?? schedule[0];
 
   const PRESETS = [
     {
       key: "weekdays",
-      label: "Ish kunlari",
-      sub: "Du–Ju · 9–20",
+      label: "Du – Ju",
+      sub: "9:00 – 20:00",
       apply: () =>
         setSchedule((prev) =>
           prev.map((d) => ({
@@ -1514,13 +1518,13 @@ function ScheduleEditor({
     {
       key: "everyday",
       label: "Har kuni",
-      sub: "Du–Yak · 10–22",
+      sub: "10:00 – 22:00",
       apply: () => applyAll({ open: true, from: "10:00", to: "22:00" }),
     },
     {
       key: "longweek",
-      label: "Uzun hafta",
-      sub: "Du–Sha · 10–21",
+      label: "Du – Sha",
+      sub: "10:00 – 21:00",
       apply: () =>
         setSchedule((prev) =>
           prev.map((d) => ({
@@ -1533,291 +1537,385 @@ function ScheduleEditor({
     },
   ];
 
+  // Generate hour ticks for visualization
+  const HOURS = Array.from({ length: 25 }, (_, i) => i);
+
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {/* HERO SUMMARY — chips + animated bar chart */}
+    <div className="space-y-5 sm:space-y-6">
+      {/* SUMMARY STRIP */}
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-foreground/[0.04] via-card to-card p-4 sm:p-5"
+        transition={{ duration: 0.3 }}
+        className="flex items-center justify-between gap-3"
       >
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-foreground/[0.04] blur-3xl" />
-
-        <div className="relative mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background shadow-[var(--shadow-soft)]">
-              <CalendarDays className="h-4 w-4" />
-            </div>
-            <div className="leading-tight">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
-                  {openCount}
-                </span>
-                <span className="text-xs font-semibold text-muted-foreground">/ 7 kun</span>
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                {openCount === 0
-                  ? "Hech qanday ish kuni tanlanmagan"
-                  : openCount === 7
-                    ? "Dam olish kunisiz ishlaysiz"
-                    : `${7 - openCount} kun dam olasiz`}
-              </div>
-            </div>
-          </div>
-
-          {openCount > 0 && earliest && (
-            <motion.div
-              key={`${earliest}-${latest}`}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.25 }}
-              className="flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1.5 text-[10px] font-bold text-foreground shadow-[var(--shadow-soft)] backdrop-blur"
+        <div>
+          <div className="flex items-baseline gap-1.5">
+            <motion.span
+              key={openCount}
+              initial={{ y: -6, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="text-3xl font-bold tracking-tight text-foreground tabular-nums sm:text-4xl"
             >
-              <Clock className="h-3 w-3" />
-              <span className="tabular-nums">
-                {earliest}–{latest}
-              </span>
-            </motion.div>
-          )}
+              {openCount}
+            </motion.span>
+            <span className="text-sm font-semibold text-muted-foreground">/ 7 kun</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            {openCount === 0
+              ? "Ish kuni tanlanmagan"
+              : openCount === 7
+                ? "Dam olish kunisiz"
+                : `${7 - openCount} kun dam olasiz`}
+          </div>
         </div>
+        {openCount > 0 && (
+          <button
+            onClick={() => applyAll({ open: false })}
+            className="rounded-full px-3 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Tozalash
+          </button>
+        )}
+      </motion.div>
 
-        {/* Big tap-friendly day chips */}
-        <div className="relative grid grid-cols-7 gap-1 sm:gap-1.5">
+      {/* PRESET PILLS */}
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+        {PRESETS.map((p) => (
+          <motion.button
+            key={p.key}
+            whileTap={{ scale: 0.96 }}
+            onClick={p.apply}
+            className="group inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-left transition-colors hover:border-foreground hover:bg-muted/40"
+          >
+            <span className="text-[12px] font-bold leading-none text-foreground">
+              {p.label}
+            </span>
+            <span className="text-[10px] font-medium leading-none text-muted-foreground tabular-nums">
+              {p.sub}
+            </span>
+          </motion.button>
+        ))}
+      </div>
+
+      {/* HORIZONTAL DAY SELECTOR — pill row */}
+      <div className="relative">
+        <div className="-mx-1 grid grid-cols-7 gap-1 px-1 sm:gap-1.5">
           {schedule.map((d) => {
-            const dayLabel = WEEKDAY_LABELS[d.day]?.slice(0, 2) ?? d.day;
+            const isSelected = d.day === selectedDay;
+            const dayShort = WEEKDAY_LABELS[d.day]?.slice(0, 2) ?? d.day;
             return (
               <motion.button
-                key={`mini-${d.day}`}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => update(d.day, { open: !d.open })}
-                className={cn(
-                  "relative flex aspect-square flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] font-bold transition-colors",
-                  d.open
-                    ? "bg-foreground text-background shadow-[var(--shadow-soft)]"
-                    : "border border-dashed border-border bg-background text-muted-foreground",
-                )}
-                title={WEEKDAY_LABELS[d.day]}
+                key={d.day}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => setSelectedDay(d.day)}
+                className="group relative flex flex-col items-center gap-1.5 rounded-2xl px-1 py-2 transition-colors"
               >
-                <span className="leading-none">{dayLabel}</span>
-                <AnimatePresence initial={false}>
-                  {d.open ? (
-                    <motion.span
-                      key="hours"
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.18 }}
-                      className="text-[8px] font-medium tabular-nums opacity-80"
-                    >
-                      {d.from.slice(0, 2)}
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="off"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="text-[8px] font-medium opacity-50"
-                    >
-                      ·
-                    </motion.span>
+                {isSelected && (
+                  <motion.span
+                    layoutId="day-pill-bg"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                    className="absolute inset-0 rounded-2xl bg-muted/60"
+                  />
+                )}
+                <span
+                  className={cn(
+                    "relative text-[11px] font-bold uppercase tracking-wider transition-colors",
+                    isSelected
+                      ? "text-foreground"
+                      : d.open
+                        ? "text-foreground/70"
+                        : "text-muted-foreground/60",
                   )}
-                </AnimatePresence>
+                >
+                  {dayShort}
+                </span>
+                <span
+                  className={cn(
+                    "relative inline-flex h-1.5 w-1.5 rounded-full transition-colors",
+                    d.open ? "bg-foreground" : "bg-muted-foreground/30",
+                  )}
+                />
               </motion.button>
             );
           })}
         </div>
-      </motion.div>
-
-      {/* PRESET CARDS — large, visual */}
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Sparkles className="h-3 w-3" /> Tayyor jadval
-          </div>
-          {openCount > 0 && (
-            <button
-              onClick={() => applyAll({ open: false })}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:text-destructive"
-            >
-              <X className="h-3 w-3" /> Tozalash
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-          {PRESETS.map((p) => (
-            <motion.button
-              key={p.key}
-              whileTap={{ scale: 0.96 }}
-              onClick={p.apply}
-              className="group flex flex-col items-start gap-0.5 rounded-2xl border border-border bg-card p-2.5 text-left transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/50 sm:p-3"
-            >
-              <span className="text-[12px] font-bold leading-tight text-foreground sm:text-sm">
-                {p.label}
-              </span>
-              <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
-                {p.sub}
-              </span>
-            </motion.button>
-          ))}
-        </div>
       </div>
 
-      {/* DAY ROWS — collapsible, animated time editor */}
-      <div className="space-y-1.5 sm:space-y-2">
-        {schedule.map((d, idx) => (
-          <motion.div
-            key={d.day}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, delay: idx * 0.03 }}
-            layout="position"
-            className={cn(
-              "overflow-hidden rounded-2xl border transition-colors",
-              d.open
-                ? "border-border bg-card shadow-[var(--shadow-soft)]"
-                : "border-dashed border-border/70 bg-muted/20",
-            )}
-          >
-            {/* Header row — full-width tap target */}
+      {/* SELECTED DAY EDITOR CARD */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={selected.day}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+          className="overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-card)]"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Tanlangan kun
+              </div>
+              <div className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+                {WEEKDAY_LABELS[selected.day]}
+              </div>
+            </div>
+
+            {/* Open / Closed toggle */}
             <button
               type="button"
-              onClick={() => update(d.day, { open: !d.open })}
-              className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/30 sm:px-4 sm:py-3"
+              onClick={() => update(selected.day, { open: !selected.open })}
+              className={cn(
+                "relative inline-flex h-9 items-center rounded-full p-1 transition-colors",
+                selected.open ? "bg-foreground" : "bg-muted",
+              )}
+              style={{ width: 92 }}
             >
-              {/* Toggle */}
               <span
                 className={cn(
-                  "relative inline-flex h-7 w-[46px] shrink-0 items-center rounded-full transition-colors",
-                  d.open ? "bg-foreground" : "bg-muted",
+                  "absolute inset-y-0 flex items-center px-3 text-[10px] font-bold uppercase tracking-wider transition-opacity",
+                  selected.open ? "right-3 text-background opacity-100" : "right-3 opacity-0",
                 )}
               >
-                <motion.span
-                  layout
-                  transition={{ type: "spring", stiffness: 600, damping: 32 }}
-                  className={cn(
-                    "inline-block h-5 w-5 rounded-full bg-background shadow-[var(--shadow-soft)]",
-                    d.open ? "ml-[24px]" : "ml-1",
-                  )}
-                />
+                Ochiq
               </span>
+              <span
+                className={cn(
+                  "absolute inset-y-0 flex items-center px-3 text-[10px] font-bold uppercase tracking-wider transition-opacity",
+                  !selected.open ? "left-3 text-muted-foreground opacity-100" : "left-3 opacity-0",
+                )}
+              >
+                Yopiq
+              </span>
+              <motion.span
+                layout
+                transition={{ type: "spring", stiffness: 500, damping: 32 }}
+                className={cn(
+                  "relative h-7 w-7 rounded-full bg-background shadow-[var(--shadow-soft)]",
+                  selected.open ? "ml-[58px]" : "ml-0",
+                )}
+              />
+            </button>
+          </div>
 
-              <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                <div className="flex flex-col leading-tight">
-                  <span
-                    className={cn(
-                      "text-sm font-bold",
-                      d.open ? "text-foreground" : "text-muted-foreground",
-                    )}
-                  >
-                    {WEEKDAY_LABELS[d.day]}
-                  </span>
-                  <span className="text-[10px] font-medium text-muted-foreground">
-                    {d.open ? "Ochiq" : "Dam olish"}
-                  </span>
-                </div>
-
-                <AnimatePresence mode="wait" initial={false}>
-                  {d.open ? (
-                    <motion.span
-                      key="hrs"
-                      initial={{ opacity: 0, scale: 0.92 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.92 }}
-                      transition={{ duration: 0.18 }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-[11px] font-bold tabular-nums text-foreground"
-                    >
-                      <Clock className="h-3 w-3 text-muted-foreground" />
-                      {d.from} – {d.to}
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="cls"
+          {/* Body */}
+          <AnimatePresence initial={false} mode="wait">
+            {selected.open ? (
+              <motion.div
+                key="open-body"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="border-t border-border/60 px-4 py-4 sm:px-5 sm:py-5">
+                  {/* TIME RANGE — large display */}
+                  <div className="mb-4 flex items-center justify-center gap-3 sm:gap-5">
+                    <TimePicker
+                      label="Ochilish"
+                      value={selected.from}
+                      onChange={(v) => update(selected.day, { from: v })}
+                    />
+                    <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="inline-flex h-1.5 w-1.5 rounded-full bg-muted-foreground/40"
+                      className="text-2xl font-light text-muted-foreground"
+                    >
+                      —
+                    </motion.div>
+                    <TimePicker
+                      label="Yopilish"
+                      value={selected.to}
+                      onChange={(v) => update(selected.day, { to: v })}
                     />
-                  )}
-                </AnimatePresence>
-              </div>
-            </button>
+                  </div>
 
-            {/* Expandable time editor */}
-            <AnimatePresence initial={false}>
-              {d.open && (
-                <motion.div
-                  key="editor"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                  className="overflow-hidden"
-                >
-                  <div className="border-t border-border/60 px-3 py-3 sm:px-4">
-                    <div className="flex items-stretch gap-2">
-                      <TimeField
-                        label="Ochilish"
-                        value={d.from}
-                        onChange={(v) => update(d.day, { from: v })}
-                      />
-                      <TimeField
-                        label="Yopilish"
-                        value={d.to}
-                        onChange={(v) => update(d.day, { to: v })}
+                  {/* HOUR RAIL — visual range */}
+                  <div className="mb-4 px-1">
+                    <div className="relative h-9 rounded-xl bg-muted/40">
+                      {/* tick marks */}
+                      <div className="absolute inset-x-0 inset-y-0 flex justify-between px-1">
+                        {HOURS.map((h) => (
+                          <div key={h} className="flex flex-col items-center justify-center">
+                            <span
+                              className={cn(
+                                "h-1 w-px",
+                                h % 6 === 0 ? "bg-muted-foreground/50" : "bg-muted-foreground/20",
+                              )}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      {/* range bar */}
+                      <motion.div
+                        layout
+                        transition={{ type: "spring", stiffness: 240, damping: 28 }}
+                        className="absolute inset-y-1 rounded-lg bg-foreground"
+                        style={{
+                          left: `${(toMinutes(selected.from) / (24 * 60)) * 100}%`,
+                          width: `${Math.max(2, ((toMinutes(selected.to) - toMinutes(selected.from)) / (24 * 60)) * 100)}%`,
+                        }}
                       />
                     </div>
-                    <button
-                      onClick={() =>
-                        setSchedule((prev) =>
-                          prev.map((x) =>
-                            x.open ? { ...x, from: d.from, to: d.to } : x,
-                          ),
-                        )
-                      }
-                      className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-transparent px-3 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-                    >
-                      <Sparkles className="h-3 w-3" />
-                      Barcha ish kunlariga qo'llash
-                    </button>
+                    <div className="mt-1.5 flex justify-between px-0.5 text-[9px] font-medium text-muted-foreground tabular-nums">
+                      <span>0</span>
+                      <span>6</span>
+                      <span>12</span>
+                      <span>18</span>
+                      <span>24</span>
+                    </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        ))}
-      </div>
+
+                  {/* QUICK HOUR CHIPS — common open / close times */}
+                  <div className="space-y-2.5">
+                    <div>
+                      <div className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Ochilish vaqti
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {["08:00", "09:00", "10:00", "11:00", "12:00"].map((t) => {
+                          const active = selected.from === t;
+                          return (
+                            <motion.button
+                              key={`from-${t}`}
+                              whileTap={{ scale: 0.93 }}
+                              onClick={() => update(selected.day, { from: t })}
+                              className={cn(
+                                "rounded-full border px-3 py-1.5 text-[11px] font-bold tabular-nums transition-colors",
+                                active
+                                  ? "border-foreground bg-foreground text-background"
+                                  : "border-border bg-background text-foreground hover:border-foreground/50",
+                              )}
+                            >
+                              {t}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Yopilish vaqti
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {["18:00", "19:00", "20:00", "21:00", "22:00", "23:00"].map((t) => {
+                          const active = selected.to === t;
+                          return (
+                            <motion.button
+                              key={`to-${t}`}
+                              whileTap={{ scale: 0.93 }}
+                              onClick={() => update(selected.day, { to: t })}
+                              className={cn(
+                                "rounded-full border px-3 py-1.5 text-[11px] font-bold tabular-nums transition-colors",
+                                active
+                                  ? "border-foreground bg-foreground text-background"
+                                  : "border-border bg-background text-foreground hover:border-foreground/50",
+                              )}
+                            >
+                              {t}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Apply to all */}
+                  <button
+                    onClick={() =>
+                      setSchedule((prev) =>
+                        prev.map((x) =>
+                          x.open ? { ...x, from: selected.from, to: selected.to } : x,
+                        ),
+                      )
+                    }
+                    className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-xl border border-dashed border-border bg-transparent px-3 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-foreground hover:bg-muted/30 hover:text-foreground"
+                  >
+                    Bu vaqtni barcha ish kunlariga qo'llash
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="closed-body"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="border-t border-border/60 px-5 py-8 text-center">
+                  <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
+                  <p className="text-sm font-semibold text-foreground">Dam olish kuni</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Yuqoridagi tugmani bosib ochsangiz bo'ladi
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
 
-function TimeField({
+function toMinutes(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  return (h ?? 0) * 60 + (m ?? 0);
+}
+
+/* Large display-style time picker — taps the native time input but shows huge text */
+function TimePicker({
   label,
   value,
   onChange,
 }: {
-  label?: string;
+  label: string;
   value: string;
   onChange: (v: string) => void;
 }) {
+  const ref = useRef<HTMLInputElement>(null);
   return (
-    <label className="group relative flex flex-1 cursor-pointer flex-col rounded-xl border border-border bg-background px-3 py-2 transition-colors focus-within:border-foreground hover:border-foreground/40">
-      {label && (
-        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </span>
-      )}
-      <div className="flex items-center gap-1.5">
-        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-        <input
-          type="time"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-transparent text-sm font-bold tabular-nums text-foreground outline-none [color-scheme:light] dark:[color-scheme:dark]"
-        />
-      </div>
-    </label>
+    <button
+      type="button"
+      onClick={() => {
+        const el = ref.current;
+        if (!el) return;
+        // showPicker is supported in modern browsers
+        if (typeof (el as HTMLInputElement & { showPicker?: () => void }).showPicker === "function") {
+          (el as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
+        } else {
+          el.focus();
+        }
+      }}
+      className="group relative flex flex-1 flex-col items-center rounded-2xl border border-border bg-background px-3 py-3 transition-colors hover:border-foreground sm:px-4 sm:py-4"
+    >
+      <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <motion.span
+        key={value}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18 }}
+        className="mt-0.5 text-2xl font-bold tabular-nums tracking-tight text-foreground sm:text-[28px]"
+      >
+        {value}
+      </motion.span>
+      <input
+        ref={ref}
+        type="time"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        tabIndex={-1}
+        aria-label={label}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+      />
+    </button>
   );
 }
 
@@ -1894,211 +1992,137 @@ function SuccessOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-background/85 px-4 py-6 backdrop-blur-xl"
+      transition={{ duration: 0.4 }}
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-background/95 px-5 py-6 backdrop-blur-2xl"
     >
-      {/* Radial spotlight */}
+      {/* Subtle gradient backdrop */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 opacity-50"
         style={{
           background:
-            "radial-gradient(ellipse 60% 50% at center, color-mix(in oklab, var(--foreground) 8%, transparent) 0%, transparent 70%)",
+            "radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--foreground) 5%, transparent) 0%, transparent 60%)",
         }}
       />
 
-      {/* Falling confetti */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {Array.from({ length: 28 }).map((_, i) => {
-          const left = (i * 37) % 100;
-          const delay = (i % 8) * 0.06;
-          const size = 5 + (i % 5) * 2;
-          const variant = i % 4;
-          return (
-            <motion.span
-              key={i}
-              initial={{ y: "-15vh", opacity: 0, rotate: 0 }}
-              animate={{
-                y: ["-15vh", "115vh"],
-                opacity: [0, 1, 1, 0],
-                rotate: variant % 2 === 0 ? 540 : -540,
-                x: variant === 0 ? [0, 30, -20, 10] : variant === 1 ? [0, -25, 15, -5] : 0,
-              }}
-              transition={{
-                duration: 2.4 + (i % 5) * 0.35,
-                delay,
-                ease: "easeIn",
-              }}
-              style={{
-                left: `${left}%`,
-                width: size,
-                height: variant === 3 ? size * 2 : size,
-              }}
-              className={cn(
-                "absolute",
-                variant === 0 && "rounded-full bg-foreground",
-                variant === 1 && "rounded-sm bg-foreground/50",
-                variant === 2 && "rounded-sm border border-foreground bg-background",
-                variant === 3 && "rounded-[1px] bg-foreground/70",
-              )}
-            />
-          );
-        })}
-      </div>
-
-      {/* Burst rays from center */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <motion.span
-            key={`ray-${i}`}
-            initial={{ scaleY: 0, opacity: 0 }}
-            animate={{ scaleY: [0, 1, 0], opacity: [0, 0.5, 0] }}
-            transition={{ duration: 1, delay: 0.2 + i * 0.02, ease: "easeOut" }}
-            style={{
-              transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-90px)`,
-              transformOrigin: "center bottom",
-            }}
-            className="absolute left-0 top-0 h-12 w-0.5 origin-bottom rounded-full bg-foreground/40"
-          />
-        ))}
-      </div>
-
       <motion.div
-        initial={{ scale: 0.85, opacity: 0, y: 24 }}
+        initial={{ scale: 0.96, opacity: 0, y: 16 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.92, opacity: 0, y: 8 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="relative my-auto w-full max-w-[420px] overflow-hidden rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-pop)] sm:p-9"
+        exit={{ scale: 0.98, opacity: 0, y: 4 }}
+        transition={{ type: "spring", stiffness: 280, damping: 26 }}
+        className="relative my-auto w-full max-w-[420px] text-center"
       >
-        {/* Soft top gradient */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-32"
-          style={{
-            background:
-              "linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 6%, transparent), transparent)",
-          }}
-        />
-
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute right-2.5 top-2.5 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/60 text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground sm:h-8 sm:w-8"
-          aria-label="Yopish"
+        {/* Big number — celebrates the moment without an icon */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="mb-6 flex flex-col items-center"
         >
-          <X className="h-4 w-4" />
-        </button>
-
-        {/* Animated checkmark */}
-        <div className="relative mx-auto mb-5 flex h-24 w-24 items-center justify-center sm:h-28 sm:w-28">
-          {/* pulse rings */}
-          <motion.span
-            className="absolute inset-0 rounded-full bg-foreground/10"
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: [0.6, 1.6], opacity: [0.7, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-          />
-          <motion.span
-            className="absolute inset-2 rounded-full bg-foreground/15"
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: [0.6, 1.4], opacity: [0.7, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 0.4 }}
-          />
-          {/* core circle */}
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.15 }}
-            className="relative flex h-20 w-20 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)] sm:h-24 sm:w-24"
+          {/* Animated single arc — minimal, elegant */}
+          <motion.svg
+            viewBox="0 0 80 80"
+            className="mb-4 h-16 w-16 sm:h-20 sm:w-20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
           >
-            <motion.svg
-              viewBox="0 0 32 32"
-              className="h-10 w-10 sm:h-12 sm:w-12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={3.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <motion.path
-                d="M7 16.5 L13.5 23 L25 10"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.55, delay: 0.45, ease: "easeOut" }}
-              />
-            </motion.svg>
-          </motion.div>
-        </div>
+            <motion.circle
+              cx="40"
+              cy="40"
+              r="36"
+              className="text-muted/60"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            />
+            <motion.path
+              d="M26 41 L36 51 L55 30"
+              className="text-foreground"
+              strokeWidth={3}
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.5, delay: 0.55, ease: "easeOut" }}
+            />
+          </motion.svg>
 
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.35 }}
-        >
-          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-[var(--shadow-soft)]">
-            <Sparkles className="h-2.5 w-2.5" />
+          <motion.span
+            initial={{ opacity: 0, letterSpacing: "0.2em" }}
+            animate={{ opacity: 1, letterSpacing: "0.18em" }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+          >
             Tabriklaymiz
-          </div>
-          <h2 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
-            Hammasi tayyor! 🎉
-          </h2>
-          <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-snug text-muted-foreground sm:text-sm">
-            <span className="font-semibold text-foreground">
-              {salonName || "Salon"}
-            </span>{" "}
-            va barber profili muvaffaqiyatli yaratildi. Endi mijozlar sizni topa oladi.
-          </p>
+          </motion.span>
         </motion.div>
 
-        {/* Summary card */}
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, y: 12 }}
+        {/* Title */}
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75, duration: 0.35 }}
+          transition={{ delay: 0.65, duration: 0.4 }}
+          className="text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
         >
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background/60 p-2.5 text-left">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
-                <Store className="h-3.5 w-3.5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Salon
-                </div>
-                <div className="truncate text-xs font-bold text-foreground">
-                  {salonName || "—"}
-                </div>
-              </div>
+          Hammasi tayyor
+        </motion.h2>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.75, duration: 0.4 }}
+          className="mx-auto mt-3 max-w-[300px] text-[13px] leading-relaxed text-muted-foreground sm:text-sm"
+        >
+          Saloningiz va profilingiz muvaffaqiyatli yaratildi. Endi mijozlar sizni topa oladi.
+        </motion.p>
+
+        {/* Light info row — no boxes, no icons */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.85, duration: 0.4 }}
+          className="mx-auto mt-7 flex max-w-[340px] items-stretch justify-center divide-x divide-border"
+        >
+          <div className="flex-1 px-3">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Salon
             </div>
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background/60 p-2.5 text-left">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
-                <User className="h-3.5 w-3.5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Barber
-                </div>
-                <div className="truncate text-xs font-bold text-foreground">
-                  {barberName || "—"}
-                </div>
-              </div>
+            <div className="mt-0.5 truncate text-sm font-bold text-foreground">
+              {salonName || "—"}
+            </div>
+          </div>
+          <div className="flex-1 px-3">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Barber
+            </div>
+            <div className="mt-0.5 truncate text-sm font-bold text-foreground">
+              {barberName || "—"}
             </div>
           </div>
         </motion.div>
 
+        {/* Primary action */}
         <motion.button
-          className="relative"
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.35 }}
+          transition={{ delay: 1.0, duration: 0.4 }}
           onClick={onClose}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background transition-colors hover:opacity-90"
         >
-          <span className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-foreground px-5 text-sm font-bold text-background shadow-[var(--shadow-pop)] sm:h-11">
-            Davom etish
-            <ArrowRight className="h-4 w-4" />
-          </span>
+          Davom etish
+        </motion.button>
+
+        {/* Secondary close */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.15, duration: 0.4 }}
+          onClick={onClose}
+          className="mt-2 inline-flex h-10 w-full items-center justify-center text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Yopish
         </motion.button>
       </motion.div>
     </motion.div>

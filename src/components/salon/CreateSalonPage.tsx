@@ -123,42 +123,62 @@ export function CreateSalonPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // --- Two main steps: Salon (0) -> Barber Profile (1) ---
-  const [step, setStep] = useState<0 | 1>(0);
+  // --- Multi-step wizard ---
+  // 0..2 = Salon group (Info, Location, Cover)
+  // 3..6 = Barber group (Profile, Services, Schedule, Languages)
+  const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
 
-  const salonValid = useMemo(
-    () =>
-      salonName.trim().length > 1 &&
-      salonPhoneDigits.length === 9 &&
-      salonCity.trim().length > 1 &&
-      salonAddress.trim().length > 2,
-    [salonName, salonPhoneDigits, salonCity, salonAddress],
-  );
-
-  const barberValid = useMemo(
-    () =>
+  const stepValid = useMemo(() => {
+    return [
+      // 0: Salon Info
+      salonName.trim().length > 1 && salonPhoneDigits.length === 9,
+      // 1: Location
+      salonCity.trim().length > 1 && salonAddress.trim().length > 2,
+      // 2: Cover (optional)
+      true,
+      // 3: Barber profile
       barberFirstName.trim().length > 1 &&
-      barberLastName.trim().length > 1 &&
-      barberPhoneDigits.length === 9 &&
-      services.every((s) => s.name && s.price && s.duration) &&
-      schedule.some((d) => d.open) &&
+        barberLastName.trim().length > 1 &&
+        barberPhoneDigits.length === 9,
+      // 4: Services
+      services.every((s) => s.name && s.price && s.duration),
+      // 5: Schedule
+      schedule.some((d) => d.open),
+      // 6: Languages
       languages.length > 0,
-    [barberFirstName, barberLastName, barberPhoneDigits, services, schedule, languages],
-  );
+    ];
+  }, [
+    salonName,
+    salonPhoneDigits,
+    salonCity,
+    salonAddress,
+    barberFirstName,
+    barberLastName,
+    barberPhoneDigits,
+    services,
+    schedule,
+    languages,
+  ]);
+
+  const TOTAL_STEPS = 7;
+  const isLast = step === TOTAL_STEPS - 1;
+  const canNext = stepValid[step];
+  const allValid = stepValid.every(Boolean);
 
   const goNext = () => {
-    if (!salonValid) return;
+    if (!canNext || isLast) return;
     setDirection(1);
-    setStep(1);
+    setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1));
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const goBack = () => {
+    if (step === 0) return;
     setDirection(-1);
-    setStep(0);
+    setStep((s) => Math.max(0, s - 1));
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }

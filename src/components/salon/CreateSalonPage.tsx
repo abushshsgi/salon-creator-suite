@@ -61,6 +61,64 @@ const LANGUAGES = [
   { code: "ar", label: "العربية" },
 ];
 
+/* ============================================================
+   Step metadata
+   ============================================================ */
+
+const STEP_META = [
+  {
+    group: "Salon",
+    short: "Asosiy",
+    title: "Salon haqida ma'lumot",
+    subtitle: "Salon nomi va aloqa raqami — mijozlar sizni shu nom bilan topadi.",
+    icon: Store,
+  },
+  {
+    group: "Salon",
+    short: "Lokatsiya",
+    title: "Salon manzili",
+    subtitle: "Mijozlar sizning saloningizga oson topib kelishi uchun manzil.",
+    icon: MapPin,
+  },
+  {
+    group: "Salon",
+    short: "Cover",
+    title: "Salon rasmi",
+    subtitle: "Bosh sahifada ko'rinadigan chiroyli cover rasm yuklang.",
+    icon: ImageIcon,
+  },
+  {
+    group: "Barber",
+    short: "Profil",
+    title: "Barber profili",
+    subtitle: "Endi o'zingiz haqingizda — ism, familiya, telefon va rasm.",
+    icon: User,
+  },
+  {
+    group: "Barber",
+    short: "Xizmatlar",
+    title: "Sizning xizmatlaringiz",
+    subtitle: "Mijozlar buyurtma berishi mumkin bo'lgan xizmatlar ro'yxati.",
+    icon: Scissors,
+  },
+  {
+    group: "Barber",
+    short: "Jadval",
+    title: "Ish jadvali",
+    subtitle: "Qaysi kunlari ishlaysiz va dam olasiz — vaqtlarni belgilang.",
+    icon: CalendarDays,
+  },
+  {
+    group: "Barber",
+    short: "Tillar",
+    title: "Muloqot tillari",
+    subtitle: "Mijozlar bilan qaysi tillarda gaplasha olasiz?",
+    icon: Languages,
+  },
+] as const;
+
+const TOTAL_STEPS = STEP_META.length;
+
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }

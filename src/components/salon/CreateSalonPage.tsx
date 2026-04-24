@@ -424,12 +424,12 @@ export function CreateSalonPage() {
 
       {/* Sticky bottom action bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[920px] items-center justify-between gap-3 px-5 py-3.5 sm:px-6 sm:py-4">
+        <div className="mx-auto flex max-w-[920px] items-center justify-between gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:gap-3 sm:px-6 sm:py-4">
           <button
             onClick={goBack}
             disabled={step === 0 || submitting}
             className={cn(
-              "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-[var(--transition-smooth)]",
+              "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3.5 text-sm font-medium text-foreground transition-[var(--transition-smooth)] sm:h-11 sm:px-4",
               step === 0
                 ? "cursor-not-allowed opacity-40"
                 : "hover:bg-muted active:scale-[0.98]",
@@ -461,7 +461,7 @@ export function CreateSalonPage() {
               onClick={goNext}
               disabled={!canNext}
               className={cn(
-                "group inline-flex h-11 min-w-[140px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:min-w-[170px]",
+                "group inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:h-11 sm:flex-none sm:min-w-[170px]",
                 canNext
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",
@@ -475,7 +475,7 @@ export function CreateSalonPage() {
               disabled={!allValid || submitting}
               onClick={handleSubmit}
               className={cn(
-                "inline-flex h-11 min-w-[160px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
+                "inline-flex h-12 flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:h-11 sm:flex-none sm:min-w-[170px]",
                 allValid && !submitting
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",

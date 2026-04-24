@@ -61,6 +61,64 @@ const LANGUAGES = [
   { code: "ar", label: "العربية" },
 ];
 
+/* ============================================================
+   Step metadata
+   ============================================================ */
+
+const STEP_META = [
+  {
+    group: "Salon",
+    short: "Asosiy",
+    title: "Salon haqida ma'lumot",
+    subtitle: "Salon nomi va aloqa raqami — mijozlar sizni shu nom bilan topadi.",
+    icon: Store,
+  },
+  {
+    group: "Salon",
+    short: "Lokatsiya",
+    title: "Salon manzili",
+    subtitle: "Mijozlar sizning saloningizga oson topib kelishi uchun manzil.",
+    icon: MapPin,
+  },
+  {
+    group: "Salon",
+    short: "Cover",
+    title: "Salon rasmi",
+    subtitle: "Bosh sahifada ko'rinadigan chiroyli cover rasm yuklang.",
+    icon: ImageIcon,
+  },
+  {
+    group: "Barber",
+    short: "Profil",
+    title: "Barber profili",
+    subtitle: "Endi o'zingiz haqingizda — ism, familiya, telefon va rasm.",
+    icon: User,
+  },
+  {
+    group: "Barber",
+    short: "Xizmatlar",
+    title: "Sizning xizmatlaringiz",
+    subtitle: "Mijozlar buyurtma berishi mumkin bo'lgan xizmatlar ro'yxati.",
+    icon: Scissors,
+  },
+  {
+    group: "Barber",
+    short: "Jadval",
+    title: "Ish jadvali",
+    subtitle: "Qaysi kunlari ishlaysiz va dam olasiz — vaqtlarni belgilang.",
+    icon: CalendarDays,
+  },
+  {
+    group: "Barber",
+    short: "Tillar",
+    title: "Muloqot tillari",
+    subtitle: "Mijozlar bilan qaysi tillarda gaplasha olasiz?",
+    icon: Languages,
+  },
+] as const;
+
+const TOTAL_STEPS = STEP_META.length;
+
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -123,42 +181,61 @@ export function CreateSalonPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // --- Two main steps: Salon (0) -> Barber Profile (1) ---
-  const [step, setStep] = useState<0 | 1>(0);
+  // --- Multi-step wizard ---
+  // 0..2 = Salon group (Info, Location, Cover)
+  // 3..6 = Barber group (Profile, Services, Schedule, Languages)
+  const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
 
-  const salonValid = useMemo(
-    () =>
-      salonName.trim().length > 1 &&
-      salonPhoneDigits.length === 9 &&
-      salonCity.trim().length > 1 &&
-      salonAddress.trim().length > 2,
-    [salonName, salonPhoneDigits, salonCity, salonAddress],
-  );
-
-  const barberValid = useMemo(
-    () =>
+  const stepValid = useMemo(() => {
+    return [
+      // 0: Salon Info
+      salonName.trim().length > 1 && salonPhoneDigits.length === 9,
+      // 1: Location
+      salonCity.trim().length > 1 && salonAddress.trim().length > 2,
+      // 2: Cover (optional)
+      true,
+      // 3: Barber profile
       barberFirstName.trim().length > 1 &&
-      barberLastName.trim().length > 1 &&
-      barberPhoneDigits.length === 9 &&
-      services.every((s) => s.name && s.price && s.duration) &&
-      schedule.some((d) => d.open) &&
+        barberLastName.trim().length > 1 &&
+        barberPhoneDigits.length === 9,
+      // 4: Services
+      services.every((s) => s.name && s.price && s.duration),
+      // 5: Schedule
+      schedule.some((d) => d.open),
+      // 6: Languages
       languages.length > 0,
-    [barberFirstName, barberLastName, barberPhoneDigits, services, schedule, languages],
-  );
+    ];
+  }, [
+    salonName,
+    salonPhoneDigits,
+    salonCity,
+    salonAddress,
+    barberFirstName,
+    barberLastName,
+    barberPhoneDigits,
+    services,
+    schedule,
+    languages,
+  ]);
+
+  const isLast = step === TOTAL_STEPS - 1;
+  const canNext = stepValid[step];
+  const allValid = stepValid.every(Boolean);
 
   const goNext = () => {
-    if (!salonValid) return;
+    if (!canNext || isLast) return;
     setDirection(1);
-    setStep(1);
+    setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1));
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const goBack = () => {
+    if (step === 0) return;
     setDirection(-1);
-    setStep(0);
+    setStep((s) => Math.max(0, s - 1));
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -191,13 +268,15 @@ export function CreateSalonPage() {
   };
 
   const handleSubmit = async () => {
-    if (!salonValid || !barberValid || submitting) return;
+    if (!allValid || submitting) return;
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 1400));
     setSubmitting(false);
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2400);
   };
+
+  const currentMeta = STEP_META[step];
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -210,67 +289,95 @@ export function CreateSalonPage() {
             </div>
             <span className="text-sm font-semibold tracking-tight">Barber Studio</span>
           </div>
-          <span className="text-xs font-medium text-muted-foreground">
-            {step + 1} / 2
+          <span className="text-xs font-medium tabular-nums text-muted-foreground">
+            <span className="text-foreground">{step + 1}</span>
+            <span className="opacity-50"> / {TOTAL_STEPS}</span>
           </span>
         </div>
-        <StepIndicator step={step} salonValid={salonValid} />
+        <StepIndicator step={step} stepValid={stepValid} onJump={(i) => {
+          // Allow jumping back freely; jumping forward only if all preceding steps are valid
+          if (i === step) return;
+          if (i < step) {
+            setDirection(-1);
+            setStep(i);
+          } else {
+            const canReach = stepValid.slice(0, i).every(Boolean);
+            if (!canReach) return;
+            setDirection(1);
+            setStep(i);
+          }
+        }} />
       </header>
 
       <main className="mx-auto max-w-[920px] px-5 pt-10 sm:px-6 sm:pt-14">
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-10 text-center"
-        >
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Sparkles className="h-3 w-3" />
-            {step === 0 ? "Salon yaratish" : "Barber profili"}
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            {step === 0 ? "Salon haqida ma'lumot" : "O'z profilingizni yarating"}
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-            {step === 0
-              ? "Avval salon profilini to'ldiring."
-              : "Endi o'zingiz haqingizda — mijozlar sizni shu ma'lumotlar bilan ko'radi."}
-          </p>
-        </motion.div>
+        {/* Animated hero — changes per step */}
+        <div className="mb-8 overflow-hidden text-center sm:mb-10">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={`hero-${step}`}
+              custom={direction}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background">
+                  <currentMeta.icon className="h-2.5 w-2.5" />
+                </span>
+                {currentMeta.group} · Qadam {step + 1}
+              </div>
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
+                {currentMeta.title}
+              </h1>
+              <p className="mx-auto mt-3 max-w-[520px] text-sm text-muted-foreground sm:text-base">
+                {currentMeta.subtitle}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={step}
             custom={direction}
-            initial={{ opacity: 0, x: direction > 0 ? 40 : -40 }}
+            initial={{ opacity: 0, x: direction > 0 ? 60 : -60 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction > 0 ? -40 : 40 }}
-            transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+            exit={{ opacity: 0, x: direction > 0 ? -60 : 60 }}
+            transition={{ duration: 0.36, ease: [0.4, 0, 0.2, 1] }}
             className="space-y-5 sm:space-y-6"
           >
-            {step === 0 ? (
-              <SalonStep
+            {step === 0 && (
+              <SalonInfoStep
                 salonName={salonName}
                 setSalonName={setSalonName}
                 salonDescription={salonDescription}
                 setSalonDescription={setSalonDescription}
                 salonPhoneDigits={salonPhoneDigits}
                 setSalonPhoneDigits={setSalonPhoneDigits}
-                salonAddress={salonAddress}
-                setSalonAddress={setSalonAddress}
+              />
+            )}
+            {step === 1 && (
+              <SalonLocationStep
                 salonCity={salonCity}
                 setSalonCity={setSalonCity}
                 salonLandmark={salonLandmark}
                 setSalonLandmark={setSalonLandmark}
+                salonAddress={salonAddress}
+                setSalonAddress={setSalonAddress}
+              />
+            )}
+            {step === 2 && (
+              <SalonCoverStep
                 cover={cover}
                 setCover={setCover}
                 coverDrag={coverDrag}
                 setCoverDrag={setCoverDrag}
                 handleCoverFile={handleCoverFile}
               />
-            ) : (
-              <BarberStep
+            )}
+            {step === 3 && (
+              <BarberProfileStep
                 firstName={barberFirstName}
                 setFirstName={setBarberFirstName}
                 lastName={barberLastName}
@@ -278,14 +385,25 @@ export function CreateSalonPage() {
                 phoneDigits={barberPhoneDigits}
                 setPhoneDigits={setBarberPhoneDigits}
                 avatar={barberAvatar}
-                setAvatar={setBarberAvatar}
                 handleAvatarFile={handleAvatarFile}
+              />
+            )}
+            {step === 4 && (
+              <BarberServicesStep
                 services={services}
                 addService={addService}
                 removeService={removeService}
                 updateService={updateService}
+              />
+            )}
+            {step === 5 && (
+              <BarberScheduleStep
                 schedule={schedule}
                 setSchedule={setSchedule}
+              />
+            )}
+            {step === 6 && (
+              <BarberLanguagesStep
                 languages={languages}
                 toggleLanguage={toggleLanguage}
               />
@@ -311,36 +429,44 @@ export function CreateSalonPage() {
             <span className="hidden sm:inline">Orqaga</span>
           </button>
 
-          <p className="hidden flex-1 text-center text-xs text-muted-foreground sm:block">
-            {step === 0
-              ? salonValid
-                ? "Salon ma'lumotlari to'liq"
-                : "Salon ma'lumotlarini to'ldiring"
-              : barberValid
-                ? "Barber profili tayyor — saqlash mumkin"
-                : "Barber profilini to'ldiring"}
-          </p>
+          <div className="hidden flex-1 items-center justify-center gap-2 text-xs sm:flex">
+            <span className="text-muted-foreground">Hozirgi qadam:</span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={`crumb-${step}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 font-semibold text-foreground"
+              >
+                <currentMeta.icon className="h-3 w-3" />
+                {currentMeta.short}
+              </motion.span>
+            </AnimatePresence>
+          </div>
 
-          {step === 0 ? (
+          {!isLast ? (
             <button
               onClick={goNext}
-              disabled={!salonValid}
+              disabled={!canNext}
               className={cn(
-                "inline-flex h-11 min-w-[150px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
-                salonValid
+                "group inline-flex h-11 min-w-[140px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:min-w-[170px]",
+                canNext
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",
               )}
             >
-              Keyingisi <ArrowRight className="h-4 w-4" />
+              Keyingisi
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </button>
           ) : (
             <button
-              disabled={!barberValid || submitting}
+              disabled={!allValid || submitting}
               onClick={handleSubmit}
               className={cn(
                 "inline-flex h-11 min-w-[160px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
-                barberValid && !submitting
+                allValid && !submitting
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",
               )}
@@ -365,22 +491,118 @@ export function CreateSalonPage() {
 }
 
 /* ============================================================
-   Step 1 — Salon
+   Sub-step 0 — Salon Info
    ============================================================ */
 
-function SalonStep(props: {
+function SalonInfoStep(props: {
   salonName: string;
   setSalonName: (v: string) => void;
   salonDescription: string;
   setSalonDescription: (v: string) => void;
   salonPhoneDigits: string;
   setSalonPhoneDigits: (v: string) => void;
-  salonAddress: string;
-  setSalonAddress: (v: string) => void;
+}) {
+  return (
+    <Section
+      icon={<Store className="h-4 w-4" />}
+      label="Salon"
+      title="Asosiy ma'lumotlar"
+      description="Salon nomi va aloqa raqami."
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FloatingInput
+          label="Salon nomi"
+          required
+          value={props.salonName}
+          onChange={props.setSalonName}
+        />
+        <PhoneInput
+          label="Telefon raqami"
+          required
+          digits={props.salonPhoneDigits}
+          onChange={props.setSalonPhoneDigits}
+        />
+      </div>
+      <FloatingTextarea
+        label="Salon haqida qisqacha (ixtiyoriy)"
+        value={props.salonDescription}
+        onChange={props.setSalonDescription}
+      />
+    </Section>
+  );
+}
+
+/* ============================================================
+   Sub-step 1 — Salon Location
+   ============================================================ */
+
+function SalonLocationStep(props: {
   salonCity: string;
   setSalonCity: (v: string) => void;
   salonLandmark: string;
   setSalonLandmark: (v: string) => void;
+  salonAddress: string;
+  setSalonAddress: (v: string) => void;
+}) {
+  return (
+    <Section
+      icon={<MapPin className="h-4 w-4" />}
+      label="Lokatsiya"
+      title="Salon manzili"
+      description="Mijozlar sizni topa olishi uchun aniq manzil."
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FloatingInput
+          label="Shahar"
+          required
+          value={props.salonCity}
+          onChange={props.setSalonCity}
+        />
+        <FloatingInput
+          label="Mo'ljal (ixtiyoriy)"
+          value={props.salonLandmark}
+          onChange={props.setSalonLandmark}
+        />
+      </div>
+      <FloatingInput
+        label="Ko'cha, uy raqami"
+        required
+        value={props.salonAddress}
+        onChange={props.setSalonAddress}
+      />
+      {/* Decorative map preview */}
+      <div className="relative mt-1 h-44 overflow-hidden rounded-2xl border border-border bg-muted/40">
+        <div
+          className="absolute inset-0 opacity-50"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative">
+              <div className="absolute -inset-2 animate-ping rounded-full bg-foreground/10" />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)]">
+                <MapPin className="h-4 w-4" />
+              </div>
+            </div>
+            <span className="max-w-[260px] truncate text-center text-[11px] font-medium text-muted-foreground">
+              {props.salonAddress.trim() || "Manzil ko'rsatilmagan"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+/* ============================================================
+   Sub-step 2 — Salon Cover
+   ============================================================ */
+
+function SalonCoverStep(props: {
   cover: string | null;
   setCover: (v: string | null) => void;
   coverDrag: boolean;
@@ -389,174 +611,93 @@ function SalonStep(props: {
 }) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   return (
-    <>
-      <Section
-        icon={<Store className="h-4 w-4" />}
-        label="Salon"
-        title="Asosiy ma'lumotlar"
-        description="Salon nomi va aloqa raqami."
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FloatingInput
-            label="Salon nomi"
-            required
-            value={props.salonName}
-            onChange={props.setSalonName}
+    <Section
+      icon={<ImageIcon className="h-4 w-4" />}
+      label="Media"
+      title="Cover rasm"
+      description="Bosh sahifada chiroyli ko'rinishi uchun (ixtiyoriy)."
+    >
+      <input
+        ref={coverInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          props.handleCoverFile(e.target.files);
+          e.target.value = "";
+        }}
+      />
+      {props.cover ? (
+        <div className="group relative h-56 w-full overflow-hidden rounded-2xl border border-border bg-muted sm:h-72">
+          <img
+            src={props.cover}
+            alt="Salon cover"
+            className="h-full w-full object-cover"
           />
-          <PhoneInput
-            label="Telefon raqami"
-            required
-            digits={props.salonPhoneDigits}
-            onChange={props.setSalonPhoneDigits}
-          />
-        </div>
-        <FloatingTextarea
-          label="Salon haqida qisqacha"
-          value={props.salonDescription}
-          onChange={props.setSalonDescription}
-        />
-      </Section>
-
-      <Section
-        icon={<MapPin className="h-4 w-4" />}
-        label="Lokatsiya"
-        title="Salon manzili"
-        description="Mijozlar sizni topa olishi uchun aniq manzil."
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FloatingInput
-            label="Shahar"
-            required
-            value={props.salonCity}
-            onChange={props.setSalonCity}
-          />
-          <FloatingInput
-            label="Mo'ljal (ixtiyoriy)"
-            value={props.salonLandmark}
-            onChange={props.setSalonLandmark}
-          />
-        </div>
-        <FloatingInput
-          label="Ko'cha, uy raqami"
-          required
-          value={props.salonAddress}
-          onChange={props.setSalonAddress}
-        />
-        {/* Decorative map preview */}
-        <div className="relative mt-1 h-40 overflow-hidden rounded-2xl border border-border bg-muted/40">
-          <div
-            className="absolute inset-0 opacity-50"
-            style={{
-              backgroundImage:
-                "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
-              backgroundSize: "28px 28px",
-            }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-1.5">
-              <div className="relative">
-                <div className="absolute -inset-2 animate-ping rounded-full bg-foreground/10" />
-                <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)]">
-                  <MapPin className="h-4 w-4" />
-                </div>
-              </div>
-              <span className="text-[11px] font-medium text-muted-foreground">
-                {props.salonAddress.trim() || "Manzil ko'rsatilmagan"}
-              </span>
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent p-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur">
+              <Check className="h-3 w-3" /> Yuklandi
+            </span>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-background/90 px-3 text-[11px] font-semibold text-foreground backdrop-blur transition-[var(--transition-smooth)] hover:bg-background"
+              >
+                <UploadCloud className="h-3 w-3" /> O'zgartirish
+              </button>
+              <button
+                type="button"
+                onClick={() => props.setCover(null)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-foreground backdrop-blur transition-[var(--transition-smooth)] hover:bg-destructive hover:text-destructive-foreground"
+                aria-label="O'chirish"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
         </div>
-      </Section>
-
-      <Section
-        icon={<ImageIcon className="h-4 w-4" />}
-        label="Media"
-        title="Cover rasm"
-        description="Salonni eng yaxshi tomondan ko'rsating."
-      >
-        <input
-          ref={coverInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            props.handleCoverFile(e.target.files);
-            // reset so same file can be re-selected
-            e.target.value = "";
+      ) : (
+        <button
+          type="button"
+          onClick={() => coverInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            props.setCoverDrag(true);
           }}
-        />
-        {props.cover ? (
-          <div className="group relative h-48 w-full overflow-hidden rounded-2xl border border-border bg-muted sm:h-56">
-            <img
-              src={props.cover}
-              alt="Salon cover"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent p-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur">
-                <Check className="h-3 w-3" /> Yuklandi
-              </span>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => coverInputRef.current?.click()}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full bg-background/90 px-3 text-[11px] font-semibold text-foreground backdrop-blur transition-[var(--transition-smooth)] hover:bg-background"
-                >
-                  <UploadCloud className="h-3 w-3" /> O'zgartirish
-                </button>
-                <button
-                  type="button"
-                  onClick={() => props.setCover(null)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-foreground backdrop-blur transition-[var(--transition-smooth)] hover:bg-destructive hover:text-destructive-foreground"
-                  aria-label="O'chirish"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
+          onDragLeave={() => props.setCoverDrag(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            props.setCoverDrag(false);
+            props.handleCoverFile(e.dataTransfer.files);
+          }}
+          className={cn(
+            "group flex h-56 w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-muted/30 transition-[var(--transition-smooth)] sm:h-72",
+            props.coverDrag
+              ? "border-foreground bg-muted"
+              : "border-border hover:border-foreground/40 hover:bg-muted/50",
+          )}
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background shadow-[var(--shadow-soft)] transition-transform group-hover:scale-110">
+            <UploadCloud className="h-5 w-5 text-foreground" />
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => coverInputRef.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              props.setCoverDrag(true);
-            }}
-            onDragLeave={() => props.setCoverDrag(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              props.setCoverDrag(false);
-              props.handleCoverFile(e.dataTransfer.files);
-            }}
-            className={cn(
-              "group flex h-48 w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-muted/30 transition-[var(--transition-smooth)] sm:h-56",
-              props.coverDrag
-                ? "border-foreground bg-muted"
-                : "border-border hover:border-foreground/40 hover:bg-muted/50",
-            )}
-          >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-background shadow-[var(--shadow-soft)] transition-transform group-hover:scale-110">
-              <UploadCloud className="h-5 w-5 text-foreground" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">
-              Cover rasm yuklash
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              Surib qo'ying yoki bosing · PNG, JPG · 10MB gacha
-            </span>
-          </button>
-        )}
-      </Section>
-    </>
+          <span className="text-sm font-semibold text-foreground">
+            Cover rasm yuklash
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            Surib qo'ying yoki bosing · PNG, JPG · 10MB gacha
+          </span>
+        </button>
+      )}
+    </Section>
   );
 }
 
 /* ============================================================
-   Step 2 — Barber profile
+   Sub-step 3 — Barber profile (personal)
    ============================================================ */
 
-function BarberStep(props: {
+function BarberProfileStep(props: {
   firstName: string;
   setFirstName: (v: string) => void;
   lastName: string;
@@ -564,205 +705,228 @@ function BarberStep(props: {
   phoneDigits: string;
   setPhoneDigits: (v: string) => void;
   avatar: string | null;
-  setAvatar: (v: string | null) => void;
   handleAvatarFile: (f: FileList | null) => void;
-  services: Service[];
-  addService: () => void;
-  removeService: (id: string) => void;
-  updateService: (id: string, k: keyof Service, v: string) => void;
-  schedule: DaySchedule[];
-  setSchedule: React.Dispatch<React.SetStateAction<DaySchedule[]>>;
-  languages: string[];
-  toggleLanguage: (code: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const initials =
     (props.firstName.trim()[0] || "") + (props.lastName.trim()[0] || "");
 
   return (
-    <>
-      {/* Personal */}
-      <Section
-        icon={<User className="h-4 w-4" />}
-        label="Shaxsiy"
-        title="Barber haqida"
-        description="Mijozlar sizni shu ism va rasm bilan ko'radi."
-      >
-        <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
-          {/* Avatar */}
-          <div className="relative">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => props.handleAvatarFile(e.target.files)}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="group relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted text-2xl font-semibold uppercase text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground"
-            >
-              {props.avatar ? (
-                <img
-                  src={props.avatar}
-                  alt="avatar"
-                  className="h-full w-full object-cover"
-                />
-              ) : initials.trim() ? (
-                <span className="text-foreground">{initials}</span>
-              ) : (
-                <UploadCloud className="h-6 w-6" />
-              )}
-              <span className="absolute inset-x-0 bottom-0 translate-y-full bg-foreground py-1 text-[10px] font-medium uppercase tracking-wider text-background transition-transform group-hover:translate-y-0">
-                {props.avatar ? "O'zgartirish" : "Rasm yuklash"}
-              </span>
-            </button>
-          </div>
-          <div className="grid flex-1 gap-3 sm:grid-cols-2 w-full">
-            <FloatingInput
-              label="Ism"
-              required
-              value={props.firstName}
-              onChange={props.setFirstName}
-            />
-            <FloatingInput
-              label="Familiya"
-              required
-              value={props.lastName}
-              onChange={props.setLastName}
-            />
-            <div className="sm:col-span-2">
-              <PhoneInput
-                label="Telefon raqami"
-                required
-                digits={props.phoneDigits}
-                onChange={props.setPhoneDigits}
-              />
-            </div>
-          </div>
-        </div>
-      </Section>
-
-      {/* Services */}
-      <Section
-        icon={<Scissors className="h-4 w-4" />}
-        label="Xizmatlar"
-        title="Sizning xizmatlaringiz"
-        description="Mijozlar buyurtma berishi mumkin bo'lgan xizmatlar."
-      >
-        <div className="space-y-3">
-          <AnimatePresence initial={false}>
-            {props.services.map((s, i) => (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, y: -6, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: "auto" }}
-                exit={{ opacity: 0, y: -6, height: 0 }}
-                transition={{ duration: 0.22 }}
-                className="overflow-hidden"
-              >
-                <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)] hover:border-foreground/30">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Xizmat #{String(i + 1).padStart(2, "0")}
-                    </span>
-                    <button
-                      onClick={() => props.removeService(s.id)}
-                      disabled={props.services.length === 1}
-                      className="rounded-lg p-1.5 text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
-                      aria-label="O'chirish"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-[1fr_120px_120px]">
-                    <FloatingInput
-                      label="Xizmat nomi"
-                      value={s.name}
-                      onChange={(v) => props.updateService(s.id, "name", v)}
-                      compact
-                    />
-                    <FloatingInput
-                      label="Narxi (so'm)"
-                      value={s.price}
-                      onChange={(v) =>
-                        props.updateService(s.id, "price", v.replace(/\D/g, ""))
-                      }
-                      compact
-                    />
-                    <FloatingInput
-                      label="Davomiyligi (min)"
-                      value={s.duration}
-                      onChange={(v) =>
-                        props.updateService(s.id, "duration", v.replace(/\D/g, ""))
-                      }
-                      compact
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+    <Section
+      icon={<User className="h-4 w-4" />}
+      label="Shaxsiy"
+      title="Barber haqida"
+      description="Mijozlar sizni shu ism va rasm bilan ko'radi."
+    >
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+        <div className="relative">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              props.handleAvatarFile(e.target.files);
+              e.target.value = "";
+            }}
+          />
           <button
-            onClick={props.addService}
-            className="group flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-transparent px-4 py-4 text-sm font-semibold text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-[0.99]"
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted text-2xl font-semibold uppercase text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-background transition-transform group-hover:rotate-90">
-              <Plus className="h-4 w-4" />
+            {props.avatar ? (
+              <img
+                src={props.avatar}
+                alt="avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : initials.trim() ? (
+              <span className="text-foreground">{initials}</span>
+            ) : (
+              <UploadCloud className="h-6 w-6" />
+            )}
+            <span className="absolute inset-x-0 bottom-0 translate-y-full bg-foreground py-1 text-[10px] font-medium uppercase tracking-wider text-background transition-transform group-hover:translate-y-0">
+              {props.avatar ? "O'zgartirish" : "Rasm yuklash"}
             </span>
-            Yangi xizmat qo'shish
           </button>
         </div>
-      </Section>
+        <div className="grid w-full flex-1 gap-3 sm:grid-cols-2">
+          <FloatingInput
+            label="Ism"
+            required
+            value={props.firstName}
+            onChange={props.setFirstName}
+          />
+          <FloatingInput
+            label="Familiya"
+            required
+            value={props.lastName}
+            onChange={props.setLastName}
+          />
+          <div className="sm:col-span-2">
+            <PhoneInput
+              label="Telefon raqami"
+              required
+              digits={props.phoneDigits}
+              onChange={props.setPhoneDigits}
+            />
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
 
-      {/* Schedule */}
-      <Section
-        icon={<CalendarDays className="h-4 w-4" />}
-        label="Jadval"
-        title="Ish kunlari"
-        description="Ish kunlarini va dam olish kunlarini belgilang."
-      >
-        <ScheduleEditor schedule={props.schedule} setSchedule={props.setSchedule} />
-      </Section>
+/* ============================================================
+   Sub-step 4 — Services
+   ============================================================ */
 
-      {/* Languages */}
-      <Section
-        icon={<Languages className="h-4 w-4" />}
-        label="Tillar"
-        title="Qaysi tillarda gaplashasiz?"
-        description="Mijozlar bilan muloqot qila oladigan tillar."
-      >
-        <div className="flex flex-wrap gap-2">
-          {LANGUAGES.map((l) => {
-            const active = props.languages.includes(l.code);
-            return (
-              <button
-                key={l.code}
-                onClick={() => props.toggleLanguage(l.code)}
+function BarberServicesStep(props: {
+  services: Service[];
+  addService: () => void;
+  removeService: (id: string) => void;
+  updateService: (id: string, k: keyof Service, v: string) => void;
+}) {
+  return (
+    <Section
+      icon={<Scissors className="h-4 w-4" />}
+      label="Xizmatlar"
+      title="Sizning xizmatlaringiz"
+      description="Mijozlar buyurtma berishi mumkin bo'lgan xizmatlar."
+    >
+      <div className="space-y-3">
+        <AnimatePresence initial={false}>
+          {props.services.map((s, i) => (
+            <motion.div
+              key={s.id}
+              initial={{ opacity: 0, y: -6, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -6, height: 0 }}
+              transition={{ duration: 0.22 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)] hover:border-foreground/30">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Xizmat #{String(i + 1).padStart(2, "0")}
+                  </span>
+                  <button
+                    onClick={() => props.removeService(s.id)}
+                    disabled={props.services.length === 1}
+                    className="rounded-lg p-1.5 text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
+                    aria-label="O'chirish"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[1fr_120px_120px]">
+                  <FloatingInput
+                    label="Xizmat nomi"
+                    value={s.name}
+                    onChange={(v) => props.updateService(s.id, "name", v)}
+                    compact
+                  />
+                  <FloatingInput
+                    label="Narxi (so'm)"
+                    value={s.price}
+                    onChange={(v) =>
+                      props.updateService(s.id, "price", v.replace(/\D/g, ""))
+                    }
+                    compact
+                  />
+                  <FloatingInput
+                    label="Davomiyligi (min)"
+                    value={s.duration}
+                    onChange={(v) =>
+                      props.updateService(s.id, "duration", v.replace(/\D/g, ""))
+                    }
+                    compact
+                  />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        <button
+          onClick={props.addService}
+          className="group flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-transparent px-4 py-4 text-sm font-semibold text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-[0.99]"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-background transition-transform group-hover:rotate-90">
+            <Plus className="h-4 w-4" />
+          </span>
+          Yangi xizmat qo'shish
+        </button>
+      </div>
+    </Section>
+  );
+}
+
+/* ============================================================
+   Sub-step 5 — Schedule
+   ============================================================ */
+
+function BarberScheduleStep(props: {
+  schedule: DaySchedule[];
+  setSchedule: React.Dispatch<React.SetStateAction<DaySchedule[]>>;
+}) {
+  return (
+    <Section
+      icon={<CalendarDays className="h-4 w-4" />}
+      label="Jadval"
+      title="Ish kunlari"
+      description="Ish kunlarini va dam olish kunlarini belgilang."
+    >
+      <ScheduleEditor schedule={props.schedule} setSchedule={props.setSchedule} />
+    </Section>
+  );
+}
+
+/* ============================================================
+   Sub-step 6 — Languages
+   ============================================================ */
+
+function BarberLanguagesStep(props: {
+  languages: string[];
+  toggleLanguage: (code: string) => void;
+}) {
+  return (
+    <Section
+      icon={<Languages className="h-4 w-4" />}
+      label="Tillar"
+      title="Qaysi tillarda gaplashasiz?"
+      description="Kamida bitta tilni tanlang."
+    >
+      <div className="flex flex-wrap gap-2">
+        {LANGUAGES.map((l) => {
+          const active = props.languages.includes(l.code);
+          return (
+            <button
+              key={l.code}
+              onClick={() => props.toggleLanguage(l.code)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium transition-[var(--transition-smooth)]",
+                active
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border bg-card text-foreground hover:border-foreground/40",
+              )}
+            >
+              <span
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium transition-[var(--transition-smooth)]",
+                  "flex h-4 w-4 items-center justify-center rounded-full border",
                   active
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border bg-card text-foreground hover:border-foreground/40",
+                    ? "border-background bg-background text-foreground"
+                    : "border-border",
                 )}
               >
-                <span
-                  className={cn(
-                    "flex h-4 w-4 items-center justify-center rounded-full border",
-                    active
-                      ? "border-background bg-background text-foreground"
-                      : "border-border",
-                  )}
-                >
-                  {active && <Check className="h-2.5 w-2.5" />}
-                </span>
-                {l.label}
-              </button>
-            );
-          })}
-        </div>
-      </Section>
-    </>
+                {active && <Check className="h-2.5 w-2.5" />}
+              </span>
+              {l.label}
+            </button>
+          );
+        })}
+      </div>
+    </Section>
   );
 }
 
@@ -772,58 +936,126 @@ function BarberStep(props: {
 
 function StepIndicator({
   step,
-  salonValid,
+  stepValid,
+  onJump,
 }: {
-  step: 0 | 1;
-  salonValid: boolean;
+  step: number;
+  stepValid: boolean[];
+  onJump: (i: number) => void;
 }) {
-  const steps = [
-    { label: "Salon", icon: Store },
-    { label: "Barber", icon: User },
-  ];
+  const total = STEP_META.length;
+  const progress = ((step + 1) / total) * 100;
+  const currentGroup = STEP_META[step].group;
+  const currentShort = STEP_META[step].short;
+  const CurrentIcon = STEP_META[step].icon;
+
   return (
     <div className="mx-auto max-w-[920px] px-5 pb-4 sm:px-6">
-      <div className="flex items-center gap-2">
-        {steps.map((s, i) => {
+      {/* Top row: current step pill (animated) + group counter */}
+      <div className="mb-2.5 flex items-center justify-between">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`pill-${step}`}
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-2.5 py-1 shadow-[var(--shadow-soft)]"
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background">
+              <CurrentIcon className="h-3 w-3" />
+            </span>
+            <span className="text-[11px] font-semibold text-foreground">
+              {currentShort}
+            </span>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              · {currentGroup}
+            </span>
+          </motion.div>
+        </AnimatePresence>
+
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {Math.round(progress)}%
+        </span>
+      </div>
+
+      {/* Progress track */}
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <motion.div
+          className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+          initial={false}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+        />
+      </div>
+
+      {/* Step dots */}
+      <div className="mt-3 flex items-center justify-between gap-1">
+        {STEP_META.map((meta, i) => {
+          const Icon = meta.icon;
+          const done = i < step;
           const active = i === step;
-          const done = i < step || (i === 0 && salonValid && step === 1);
-          const Icon = s.icon;
+          const reachable =
+            i <= step || stepValid.slice(0, i).every(Boolean);
+          // Detect group boundary (between Salon and Barber)
+          const isGroupStart =
+            i > 0 && STEP_META[i - 1].group !== meta.group;
           return (
-            <div key={s.label} className="flex flex-1 items-center gap-2">
-              <div className="flex flex-1 items-center gap-2">
-                <div
-                  className={cn(
-                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-[var(--transition-smooth)]",
-                    done
-                      ? "border-foreground bg-foreground text-background"
-                      : active
-                        ? "border-foreground bg-background text-foreground"
-                        : "border-border bg-background text-muted-foreground",
-                  )}
-                >
-                  {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
-                </div>
-                <div className="hidden sm:block">
-                  <div
-                    className={cn(
-                      "text-xs font-semibold",
-                      active || done ? "text-foreground" : "text-muted-foreground",
-                    )}
-                  >
-                    {s.label}
-                  </div>
-                </div>
+            <div key={i} className="flex flex-1 items-center gap-1">
+              {isGroupStart && (
+                <span className="mx-1 hidden h-3 w-px bg-border sm:block" />
+              )}
+              <button
+                type="button"
+                onClick={() => reachable && onJump(i)}
+                disabled={!reachable}
+                className={cn(
+                  "group relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-[var(--transition-smooth)]",
+                  done
+                    ? "border-foreground bg-foreground text-background"
+                    : active
+                      ? "border-foreground bg-background text-foreground"
+                      : "border-border bg-background text-muted-foreground",
+                  reachable && !active
+                    ? "cursor-pointer hover:border-foreground"
+                    : "",
+                  !reachable && "cursor-not-allowed opacity-50",
+                )}
+                aria-label={`${meta.short} qadami`}
+              >
+                {done ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Icon className="h-3.5 w-3.5" />
+                )}
+                {active && (
+                  <motion.span
+                    layoutId="active-ring"
+                    className="absolute -inset-1 rounded-full ring-2 ring-foreground/20"
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+                {/* Tooltip-style label under each dot, only for current */}
+                {active && (
+                  <span className="pointer-events-none absolute -bottom-5 left-1/2 hidden -translate-x-1/2 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider text-foreground sm:block">
+                    {meta.short}
+                  </span>
+                )}
+              </button>
+              {i < STEP_META.length - 1 && (
                 <div
                   className={cn(
                     "h-[2px] flex-1 rounded-full transition-[var(--transition-smooth)]",
-                    done ? "bg-foreground" : active ? "bg-foreground/30" : "bg-border",
+                    i < step ? "bg-foreground" : "bg-border",
                   )}
                 />
-              </div>
+              )}
             </div>
           );
         })}
       </div>
+      {/* Spacer for tooltip labels under active dot on desktop */}
+      <div className="hidden h-3 sm:block" />
     </div>
   );
 }

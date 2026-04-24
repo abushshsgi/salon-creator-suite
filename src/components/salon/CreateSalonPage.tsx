@@ -278,7 +278,7 @@ export function CreateSalonPage() {
   const currentMeta = STEP_META[step];
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-28 sm:pb-32">
       {/* Success overlay */}
       <AnimatePresence>
         {success && (
@@ -319,9 +319,9 @@ export function CreateSalonPage() {
         }} />
       </header>
 
-      <main className="mx-auto max-w-[920px] px-5 pt-10 sm:px-6 sm:pt-14">
+      <main className="mx-auto max-w-[920px] px-4 pt-8 sm:px-6 sm:pt-14">
         {/* Animated hero — changes per step */}
-        <div className="mb-8 overflow-hidden text-center sm:mb-10">
+        <div className="mb-7 overflow-hidden text-center sm:mb-10">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={`hero-${step}`}
@@ -331,16 +331,16 @@ export function CreateSalonPage() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             >
-              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background">
                   <currentMeta.icon className="h-2.5 w-2.5" />
                 </span>
                 {currentMeta.group} · Qadam {step + 1}
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
+              <h1 className="text-[26px] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
                 {currentMeta.title}
               </h1>
-              <p className="mx-auto mt-3 max-w-[520px] text-sm text-muted-foreground sm:text-base">
+              <p className="mx-auto mt-2.5 max-w-[520px] px-2 text-[13px] leading-snug text-muted-foreground sm:mt-3 sm:px-0 sm:text-base">
                 {currentMeta.subtitle}
               </p>
             </motion.div>
@@ -424,12 +424,12 @@ export function CreateSalonPage() {
 
       {/* Sticky bottom action bar */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[920px] items-center justify-between gap-3 px-5 py-3.5 sm:px-6 sm:py-4">
+        <div className="mx-auto flex max-w-[920px] items-center justify-between gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:gap-3 sm:px-6 sm:py-4">
           <button
             onClick={goBack}
             disabled={step === 0 || submitting}
             className={cn(
-              "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground transition-[var(--transition-smooth)]",
+              "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3.5 text-sm font-medium text-foreground transition-[var(--transition-smooth)] sm:h-11 sm:px-4",
               step === 0
                 ? "cursor-not-allowed opacity-40"
                 : "hover:bg-muted active:scale-[0.98]",
@@ -461,7 +461,7 @@ export function CreateSalonPage() {
               onClick={goNext}
               disabled={!canNext}
               className={cn(
-                "group inline-flex h-11 min-w-[140px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:min-w-[170px]",
+                "group inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:h-11 sm:flex-none sm:min-w-[170px]",
                 canNext
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",
@@ -475,7 +475,7 @@ export function CreateSalonPage() {
               disabled={!allValid || submitting}
               onClick={handleSubmit}
               className={cn(
-                "inline-flex h-11 min-w-[160px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
+                "inline-flex h-12 flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:h-11 sm:flex-none sm:min-w-[170px]",
                 allValid && !submitting
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",
@@ -1492,145 +1492,219 @@ function ScheduleEditor({
     setSchedule((prev) => prev.map((d) => ({ ...d, ...patch })));
 
   const openCount = schedule.filter((d) => d.open).length;
+  const openDays = schedule.filter((d) => d.open);
+  const earliest = openDays.reduce<string>((acc, d) => (!acc || d.from < acc ? d.from : acc), "");
+  const latest = openDays.reduce<string>((acc, d) => (!acc || d.to > acc ? d.to : acc), "");
+
+  const PRESETS = [
+    {
+      key: "weekdays",
+      label: "Ish kunlari",
+      sub: "Du–Ju · 9–20",
+      apply: () =>
+        setSchedule((prev) =>
+          prev.map((d) => ({
+            ...d,
+            open: !["Sat", "Sun"].includes(d.day),
+            from: "09:00",
+            to: "20:00",
+          })),
+        ),
+    },
+    {
+      key: "everyday",
+      label: "Har kuni",
+      sub: "Du–Yak · 10–22",
+      apply: () => applyAll({ open: true, from: "10:00", to: "22:00" }),
+    },
+    {
+      key: "longweek",
+      label: "Uzun hafta",
+      sub: "Du–Sha · 10–21",
+      apply: () =>
+        setSchedule((prev) =>
+          prev.map((d) => ({
+            ...d,
+            open: !["Sun"].includes(d.day),
+            from: "10:00",
+            to: "21:00",
+          })),
+        ),
+    },
+  ];
 
   return (
-    <div className="space-y-4">
-      {/* Hero summary card — visual week overview */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-muted/40 to-card p-4 sm:p-5">
-        <div className="mb-3 flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-5">
+      {/* HERO SUMMARY — chips + animated bar chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-foreground/[0.04] via-card to-card p-4 sm:p-5"
+      >
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-foreground/[0.04] blur-3xl" />
+
+        <div className="relative mb-4 flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background shadow-[var(--shadow-soft)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background shadow-[var(--shadow-soft)]">
               <CalendarDays className="h-4 w-4" />
             </div>
             <div className="leading-tight">
-              <div className="text-sm font-bold text-foreground tabular-nums">
-                {openCount}/7 kun ishlaysiz
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
+                  {openCount}
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground">/ 7 kun</span>
               </div>
-              <div className="text-[10px] text-muted-foreground">
-                {7 - openCount > 0 ? `${7 - openCount} dam olish kuni` : "Dam olishsiz"}
+              <div className="text-[11px] text-muted-foreground">
+                {openCount === 0
+                  ? "Hech qanday ish kuni tanlanmagan"
+                  : openCount === 7
+                    ? "Dam olish kunisiz ishlaysiz"
+                    : `${7 - openCount} kun dam olasiz`}
               </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Hafta</div>
-            <div className="text-[10px] font-medium text-foreground">Du · Du · Yak</div>
-          </div>
-        </div>
-        {/* Mini week visual */}
-        <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
-          {schedule.map((d) => (
-            <button
-              key={`mini-${d.day}`}
-              onClick={() => update(d.day, { open: !d.open })}
-              className={cn(
-                "group flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg text-[10px] font-bold transition-[var(--transition-smooth)] active:scale-95",
-                d.open
-                  ? "bg-foreground text-background shadow-[var(--shadow-soft)] hover:opacity-90"
-                  : "bg-background text-muted-foreground hover:bg-muted",
-              )}
-              title={WEEKDAY_LABELS[d.day]}
+
+          {openCount > 0 && earliest && (
+            <motion.div
+              key={`${earliest}-${latest}`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1.5 text-[10px] font-bold text-foreground shadow-[var(--shadow-soft)] backdrop-blur"
             >
-              <span>{WEEKDAY_LABELS[d.day]?.slice(0, 2)}</span>
-              {d.open && (
-                <span className="text-[8px] font-medium opacity-70 tabular-nums">
-                  {d.from.slice(0, 2)}
-                </span>
-              )}
+              <Clock className="h-3 w-3" />
+              <span className="tabular-nums">
+                {earliest}–{latest}
+              </span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Big tap-friendly day chips */}
+        <div className="relative grid grid-cols-7 gap-1 sm:gap-1.5">
+          {schedule.map((d) => {
+            const dayLabel = WEEKDAY_LABELS[d.day]?.slice(0, 2) ?? d.day;
+            return (
+              <motion.button
+                key={`mini-${d.day}`}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => update(d.day, { open: !d.open })}
+                className={cn(
+                  "relative flex aspect-square flex-col items-center justify-center gap-0.5 rounded-2xl text-[11px] font-bold transition-colors",
+                  d.open
+                    ? "bg-foreground text-background shadow-[var(--shadow-soft)]"
+                    : "border border-dashed border-border bg-background text-muted-foreground",
+                )}
+                title={WEEKDAY_LABELS[d.day]}
+              >
+                <span className="leading-none">{dayLabel}</span>
+                <AnimatePresence initial={false}>
+                  {d.open ? (
+                    <motion.span
+                      key="hours"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.18 }}
+                      className="text-[8px] font-medium tabular-nums opacity-80"
+                    >
+                      {d.from.slice(0, 2)}
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="off"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-[8px] font-medium opacity-50"
+                    >
+                      ·
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      {/* PRESET CARDS — large, visual */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <Sparkles className="h-3 w-3" /> Tayyor jadval
+          </div>
+          {openCount > 0 && (
+            <button
+              onClick={() => applyAll({ open: false })}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:text-destructive"
+            >
+              <X className="h-3 w-3" /> Tozalash
             </button>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          {PRESETS.map((p) => (
+            <motion.button
+              key={p.key}
+              whileTap={{ scale: 0.96 }}
+              onClick={p.apply}
+              className="group flex flex-col items-start gap-0.5 rounded-2xl border border-border bg-card p-2.5 text-left transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/50 sm:p-3"
+            >
+              <span className="text-[12px] font-bold leading-tight text-foreground sm:text-sm">
+                {p.label}
+              </span>
+              <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
+                {p.sub}
+              </span>
+            </motion.button>
           ))}
         </div>
       </div>
 
-      {/* Quick presets */}
-      <div>
-        <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <Sparkles className="h-3 w-3" /> Tezkor jadval
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() =>
-              setSchedule((prev) =>
-                prev.map((d) => ({
-                  ...d,
-                  open: !["Sat", "Sun"].includes(d.day),
-                  from: "09:00",
-                  to: "20:00",
-                })),
-              )
-            }
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-95"
-          >
-            <span className="font-bold">Du–Ju</span>
-            <span className="text-muted-foreground">9:00–20:00</span>
-          </button>
-          <button
-            onClick={() => applyAll({ open: true, from: "10:00", to: "22:00" })}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-95"
-          >
-            <span className="font-bold">Har kuni</span>
-            <span className="text-muted-foreground">10:00–22:00</span>
-          </button>
-          <button
-            onClick={() =>
-              setSchedule((prev) =>
-                prev.map((d) => ({
-                  ...d,
-                  open: !["Sun"].includes(d.day),
-                  from: "10:00",
-                  to: "21:00",
-                })),
-              )
-            }
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-95"
-          >
-            <span className="font-bold">Du–Sha</span>
-            <span className="text-muted-foreground">10:00–21:00</span>
-          </button>
-          <button
-            onClick={() => applyAll({ open: false })}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition-[var(--transition-smooth)] hover:border-destructive/40 hover:text-destructive active:scale-95"
-          >
-            <X className="h-3 w-3" /> Tozalash
-          </button>
-        </div>
-      </div>
-
-      {/* Day rows — clean, large hit areas */}
-      <div className="space-y-2">
-        {schedule.map((d) => (
+      {/* DAY ROWS — collapsible, animated time editor */}
+      <div className="space-y-1.5 sm:space-y-2">
+        {schedule.map((d, idx) => (
           <motion.div
             key={d.day}
-            layout
-            transition={{ duration: 0.22 }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, delay: idx * 0.03 }}
+            layout="position"
             className={cn(
-              "overflow-hidden rounded-2xl border transition-[var(--transition-smooth)]",
+              "overflow-hidden rounded-2xl border transition-colors",
               d.open
                 ? "border-border bg-card shadow-[var(--shadow-soft)]"
-                : "border-border/60 bg-muted/20",
+                : "border-dashed border-border/70 bg-muted/20",
             )}
           >
-            <div className="flex items-center gap-3 p-3 sm:gap-4 sm:p-3.5">
-              {/* Day label + toggle */}
-              <button
-                onClick={() => update(d.day, { open: !d.open })}
-                className="flex shrink-0 items-center gap-3"
+            {/* Header row — full-width tap target */}
+            <button
+              type="button"
+              onClick={() => update(d.day, { open: !d.open })}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/30 sm:px-4 sm:py-3"
+            >
+              {/* Toggle */}
+              <span
+                className={cn(
+                  "relative inline-flex h-7 w-[46px] shrink-0 items-center rounded-full transition-colors",
+                  d.open ? "bg-foreground" : "bg-muted",
+                )}
               >
-                <span
+                <motion.span
+                  layout
+                  transition={{ type: "spring", stiffness: 600, damping: 32 }}
                   className={cn(
-                    "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors",
-                    d.open ? "bg-foreground" : "bg-muted",
+                    "inline-block h-5 w-5 rounded-full bg-background shadow-[var(--shadow-soft)]",
+                    d.open ? "ml-[24px]" : "ml-1",
                   )}
-                >
-                  <motion.span
-                    layout
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    className={cn(
-                      "inline-block h-5 w-5 rounded-full bg-background shadow-[var(--shadow-soft)]",
-                      d.open ? "ml-[26px]" : "ml-1",
-                    )}
-                  />
-                </span>
-                <div className="flex flex-col items-start leading-tight">
+                />
+              </span>
+
+              <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                <div className="flex flex-col leading-tight">
                   <span
                     className={cn(
                       "text-sm font-bold",
@@ -1640,59 +1714,77 @@ function ScheduleEditor({
                     {WEEKDAY_LABELS[d.day]}
                   </span>
                   <span className="text-[10px] font-medium text-muted-foreground">
-                    {d.open ? "Ish kuni" : "Dam olish"}
+                    {d.open ? "Ochiq" : "Dam olish"}
                   </span>
                 </div>
-              </button>
 
-              {/* Time slots or closed label */}
-              <div className="flex flex-1 items-center justify-end">
                 <AnimatePresence mode="wait" initial={false}>
                   {d.open ? (
-                    <motion.div
-                      key="open"
-                      initial={{ opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 8 }}
+                    <motion.span
+                      key="hrs"
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.92 }}
                       transition={{ duration: 0.18 }}
-                      className="flex items-center gap-1.5 sm:gap-2"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-[11px] font-bold tabular-nums text-foreground"
                     >
-                      <TimeField
-                        value={d.from}
-                        onChange={(v) => update(d.day, { from: v })}
-                      />
-                      <span className="text-xs font-medium text-muted-foreground">→</span>
-                      <TimeField value={d.to} onChange={(v) => update(d.day, { to: v })} />
-                      <button
-                        onClick={() =>
-                          setSchedule((prev) =>
-                            prev.map((x) =>
-                              x.open ? { ...x, from: d.from, to: d.to } : x,
-                            ),
-                          )
-                        }
-                        className="ml-1 hidden h-9 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:text-foreground sm:inline-flex"
-                        title="Boshqa ish kunlariga ham qo'llash"
-                      >
-                        Barchaga
-                      </button>
-                    </motion.div>
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      {d.from} – {d.to}
+                    </motion.span>
                   ) : (
                     <motion.span
-                      key="closed"
+                      key="cls"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.18 }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-                      Yopiq
-                    </motion.span>
+                      className="inline-flex h-1.5 w-1.5 rounded-full bg-muted-foreground/40"
+                    />
                   )}
                 </AnimatePresence>
               </div>
-            </div>
+            </button>
+
+            {/* Expandable time editor */}
+            <AnimatePresence initial={false}>
+              {d.open && (
+                <motion.div
+                  key="editor"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-border/60 px-3 py-3 sm:px-4">
+                    <div className="flex items-stretch gap-2">
+                      <TimeField
+                        label="Ochilish"
+                        value={d.from}
+                        onChange={(v) => update(d.day, { from: v })}
+                      />
+                      <TimeField
+                        label="Yopilish"
+                        value={d.to}
+                        onChange={(v) => update(d.day, { to: v })}
+                      />
+                    </div>
+                    <button
+                      onClick={() =>
+                        setSchedule((prev) =>
+                          prev.map((x) =>
+                            x.open ? { ...x, from: d.from, to: d.to } : x,
+                          ),
+                        )
+                      }
+                      className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-transparent px-3 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Barcha ish kunlariga qo'llash
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ))}
       </div>
@@ -1701,22 +1793,31 @@ function ScheduleEditor({
 }
 
 function TimeField({
+  label,
   value,
   onChange,
 }: {
+  label?: string;
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex flex-1 items-center rounded-lg border border-border bg-background transition-[var(--transition-smooth)] focus-within:border-foreground">
-      <Clock className="ml-2.5 h-3 w-3 text-muted-foreground" />
-      <input
-        type="time"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-full bg-transparent px-2 text-xs font-medium tabular-nums text-foreground outline-none"
-      />
-    </div>
+    <label className="group relative flex flex-1 cursor-pointer flex-col rounded-xl border border-border bg-background px-3 py-2 transition-colors focus-within:border-foreground hover:border-foreground/40">
+      {label && (
+        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+      )}
+      <div className="flex items-center gap-1.5">
+        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+        <input
+          type="time"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-transparent text-sm font-bold tabular-nums text-foreground outline-none [color-scheme:light] dark:[color-scheme:dark]"
+        />
+      </div>
+    </label>
   );
 }
 
@@ -1794,88 +1895,123 @@ function SuccessOverlay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-background/85 backdrop-blur-xl px-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-background/85 px-4 py-6 backdrop-blur-xl"
     >
-      {/* Decorative confetti dots */}
+      {/* Radial spotlight */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at center, color-mix(in oklab, var(--foreground) 8%, transparent) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Falling confetti */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {Array.from({ length: 18 }).map((_, i) => {
-          const left = (i * 53) % 100;
-          const delay = (i % 6) * 0.08;
-          const size = 6 + (i % 4) * 2;
+        {Array.from({ length: 28 }).map((_, i) => {
+          const left = (i * 37) % 100;
+          const delay = (i % 8) * 0.06;
+          const size = 5 + (i % 5) * 2;
+          const variant = i % 4;
           return (
             <motion.span
               key={i}
-              initial={{ y: -40, opacity: 0, rotate: 0 }}
+              initial={{ y: "-15vh", opacity: 0, rotate: 0 }}
               animate={{
-                y: ["-10vh", "110vh"],
+                y: ["-15vh", "115vh"],
                 opacity: [0, 1, 1, 0],
-                rotate: 360,
+                rotate: variant % 2 === 0 ? 540 : -540,
+                x: variant === 0 ? [0, 30, -20, 10] : variant === 1 ? [0, -25, 15, -5] : 0,
               }}
               transition={{
-                duration: 2.6 + (i % 4) * 0.4,
+                duration: 2.4 + (i % 5) * 0.35,
                 delay,
                 ease: "easeIn",
-                repeat: 0,
               }}
               style={{
                 left: `${left}%`,
                 width: size,
-                height: size,
+                height: variant === 3 ? size * 2 : size,
               }}
               className={cn(
-                "absolute rounded-sm",
-                i % 3 === 0
-                  ? "bg-foreground"
-                  : i % 3 === 1
-                    ? "bg-foreground/40"
-                    : "border border-foreground bg-background",
+                "absolute",
+                variant === 0 && "rounded-full bg-foreground",
+                variant === 1 && "rounded-sm bg-foreground/50",
+                variant === 2 && "rounded-sm border border-foreground bg-background",
+                variant === 3 && "rounded-[1px] bg-foreground/70",
               )}
             />
           );
         })}
       </div>
 
+      {/* Burst rays from center */}
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <motion.span
+            key={`ray-${i}`}
+            initial={{ scaleY: 0, opacity: 0 }}
+            animate={{ scaleY: [0, 1, 0], opacity: [0, 0.5, 0] }}
+            transition={{ duration: 1, delay: 0.2 + i * 0.02, ease: "easeOut" }}
+            style={{
+              transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-90px)`,
+              transformOrigin: "center bottom",
+            }}
+            className="absolute left-0 top-0 h-12 w-0.5 origin-bottom rounded-full bg-foreground/40"
+          />
+        ))}
+      </div>
+
       <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        initial={{ scale: 0.85, opacity: 0, y: 24 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 280, damping: 24 }}
-        className="relative w-full max-w-[420px] overflow-hidden rounded-3xl border border-border bg-card p-8 text-center shadow-[var(--shadow-pop)] sm:p-10"
+        exit={{ scale: 0.92, opacity: 0, y: 8 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        className="relative my-auto w-full max-w-[420px] overflow-hidden rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-pop)] sm:p-9"
       >
+        {/* Soft top gradient */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-32"
+          style={{
+            background:
+              "linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 6%, transparent), transparent)",
+          }}
+        />
+
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground"
+          className="absolute right-2.5 top-2.5 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/60 text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground sm:h-8 sm:w-8"
           aria-label="Yopish"
         >
           <X className="h-4 w-4" />
         </button>
 
         {/* Animated checkmark */}
-        <div className="relative mx-auto mb-5 flex h-24 w-24 items-center justify-center">
+        <div className="relative mx-auto mb-5 flex h-24 w-24 items-center justify-center sm:h-28 sm:w-28">
           {/* pulse rings */}
           <motion.span
             className="absolute inset-0 rounded-full bg-foreground/10"
             initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: [0.6, 1.4], opacity: [0.6, 0] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
+            animate={{ scale: [0.6, 1.6], opacity: [0.7, 0] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
           />
           <motion.span
             className="absolute inset-2 rounded-full bg-foreground/15"
             initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: [0.6, 1.3], opacity: [0.6, 0] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut", delay: 0.3 }}
+            animate={{ scale: [0.6, 1.4], opacity: [0.7, 0] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 0.4 }}
           />
           {/* core circle */}
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.1 }}
-            className="relative flex h-20 w-20 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)]"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.15 }}
+            className="relative flex h-20 w-20 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)] sm:h-24 sm:w-24"
           >
             <motion.svg
               viewBox="0 0 32 32"
-              className="h-10 w-10"
+              className="h-10 w-10 sm:h-12 sm:w-12"
               fill="none"
               stroke="currentColor"
               strokeWidth={3.5}
@@ -1886,72 +2022,83 @@ function SuccessOverlay({
                 d="M7 16.5 L13.5 23 L25 10"
                 initial={{ pathLength: 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+                transition={{ duration: 0.55, delay: 0.45, ease: "easeOut" }}
               />
             </motion.svg>
           </motion.div>
         </div>
 
         <motion.div
+          className="relative"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.35 }}
+          transition={{ delay: 0.6, duration: 0.35 }}
         >
-          <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-[var(--shadow-soft)]">
             <Sparkles className="h-2.5 w-2.5" />
             Tabriklaymiz
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Muvaffaqiyatli yaratildi!
+          <h2 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
+            Hammasi tayyor! 🎉
           </h2>
-          <p className="mx-auto mt-2 max-w-[320px] text-sm text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-snug text-muted-foreground sm:text-sm">
             <span className="font-semibold text-foreground">
               {salonName || "Salon"}
             </span>{" "}
-            va barber profili tayyor. Endi mijozlar sizni topishi mumkin.
+            va barber profili muvaffaqiyatli yaratildi. Endi mijozlar sizni topa oladi.
           </p>
         </motion.div>
 
         {/* Summary card */}
         <motion.div
+          className="relative"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65, duration: 0.35 }}
-          className="mt-5 grid grid-cols-2 gap-2"
+          transition={{ delay: 0.75, duration: 0.35 }}
         >
-          <div className="rounded-xl border border-border bg-muted/30 p-2.5 text-left">
-            <div className="mb-1 flex items-center gap-1.5">
-              <Store className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                Salon
+          <div className="mt-5 grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background/60 p-2.5 text-left">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
+                <Store className="h-3.5 w-3.5" />
               </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Salon
+                </div>
+                <div className="truncate text-xs font-bold text-foreground">
+                  {salonName || "—"}
+                </div>
+              </div>
             </div>
-            <div className="truncate text-xs font-semibold text-foreground">
-              {salonName || "—"}
-            </div>
-          </div>
-          <div className="rounded-xl border border-border bg-muted/30 p-2.5 text-left">
-            <div className="mb-1 flex items-center gap-1.5">
-              <User className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                Barber
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background/60 p-2.5 text-left">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
+                <User className="h-3.5 w-3.5" />
               </span>
-            </div>
-            <div className="truncate text-xs font-semibold text-foreground">
-              {barberName || "—"}
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Barber
+                </div>
+                <div className="truncate text-xs font-bold text-foreground">
+                  {barberName || "—"}
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
 
         <motion.button
+          className="relative"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.35 }}
+          transition={{ delay: 0.9, duration: 0.35 }}
           onClick={onClose}
-          className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 text-sm font-semibold text-background transition-[var(--transition-smooth)] hover:scale-[1.02] active:scale-[0.98]"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          Davom etish
-          <ArrowRight className="h-4 w-4" />
+          <span className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-foreground px-5 text-sm font-bold text-background shadow-[var(--shadow-pop)] sm:h-11">
+            Davom etish
+            <ArrowRight className="h-4 w-4" />
+          </span>
         </motion.button>
       </motion.div>
     </motion.div>

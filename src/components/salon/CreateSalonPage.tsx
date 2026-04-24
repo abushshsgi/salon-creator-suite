@@ -321,7 +321,7 @@ export function CreateSalonPage() {
 
       <main className="mx-auto max-w-[920px] px-5 pt-10 sm:px-6 sm:pt-14">
         {/* Animated hero — changes per step */}
-        <div className="mb-8 overflow-hidden text-center sm:mb-10">
+        <div className="mb-7 overflow-hidden text-center sm:mb-10">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={`hero-${step}`}
@@ -331,16 +331,16 @@ export function CreateSalonPage() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             >
-              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background">
                   <currentMeta.icon className="h-2.5 w-2.5" />
                 </span>
                 {currentMeta.group} · Qadam {step + 1}
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
+              <h1 className="text-[26px] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
                 {currentMeta.title}
               </h1>
-              <p className="mx-auto mt-3 max-w-[520px] text-sm text-muted-foreground sm:text-base">
+              <p className="mx-auto mt-2.5 max-w-[520px] px-2 text-[13px] leading-snug text-muted-foreground sm:mt-3 sm:px-0 sm:text-base">
                 {currentMeta.subtitle}
               </p>
             </motion.div>

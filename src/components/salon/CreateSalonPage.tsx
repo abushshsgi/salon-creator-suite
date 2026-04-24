@@ -946,106 +946,99 @@ function StepIndicator({
   const total = STEP_META.length;
   const progress = ((step + 1) / total) * 100;
   const currentGroup = STEP_META[step].group;
-  const currentShort = STEP_META[step].short;
-  const CurrentIcon = STEP_META[step].icon;
+
+  // Group salon (0..2) and barber (3..6) sub-steps
+  const salonSteps = STEP_META.map((m, i) => ({ ...m, idx: i })).filter(
+    (m) => m.group === "Salon",
+  );
+  const barberSteps = STEP_META.map((m, i) => ({ ...m, idx: i })).filter(
+    (m) => m.group === "Barber",
+  );
+  const salonDone = salonSteps.every((s) => stepValid[s.idx]);
+  const barberActive = currentGroup === "Barber";
 
   return (
-    <div className="mx-auto max-w-[920px] px-5 pb-4 sm:px-6">
-      {/* Top row: current step pill (animated) + group counter */}
-      <div className="mb-2.5 flex items-center justify-between">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`pill-${step}`}
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-2.5 py-1 shadow-[var(--shadow-soft)]"
-          >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background">
-              <CurrentIcon className="h-3 w-3" />
-            </span>
-            <span className="text-[11px] font-semibold text-foreground">
-              {currentShort}
-            </span>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              · {currentGroup}
-            </span>
-          </motion.div>
-        </AnimatePresence>
+    <div className="mx-auto max-w-[920px] px-5 pb-5 sm:px-6">
+      {/* TWO BIG GROUP ICONS — Salon · line · Barber */}
+      <div className="mb-4 flex items-center justify-center gap-2 sm:gap-4">
+        <GroupChip
+          icon={Store}
+          label="Salon"
+          state={
+            barberActive || salonDone ? "done" : currentGroup === "Salon" ? "active" : "idle"
+          }
+        />
+        <GroupConnector filled={salonDone || barberActive} />
+        <GroupChip
+          icon={User}
+          label="Barber"
+          state={
+            currentGroup === "Barber"
+              ? stepValid.every(Boolean)
+                ? "done"
+                : "active"
+              : "idle"
+          }
+        />
+      </div>
 
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      {/* Progress track with percent */}
+      <div className="mb-3 flex items-center gap-3">
+        <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+            initial={false}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          />
+        </div>
+        <span className="text-[10px] font-semibold uppercase tracking-wider tabular-nums text-muted-foreground">
           {Math.round(progress)}%
         </span>
       </div>
 
-      {/* Progress track */}
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <motion.div
-          className="absolute inset-y-0 left-0 rounded-full bg-foreground"
-          initial={false}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
-        />
-      </div>
-
-      {/* Step dots */}
-      <div className="mt-3 flex items-center justify-between gap-1">
+      {/* Sub-step dots — visible on all sizes, scrollable on mobile */}
+      <div className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {STEP_META.map((meta, i) => {
           const Icon = meta.icon;
           const done = i < step;
           const active = i === step;
-          const reachable =
-            i <= step || stepValid.slice(0, i).every(Boolean);
-          // Detect group boundary (between Salon and Barber)
-          const isGroupStart =
-            i > 0 && STEP_META[i - 1].group !== meta.group;
+          const reachable = i <= step || stepValid.slice(0, i).every(Boolean);
+          const isGroupStart = i > 0 && STEP_META[i - 1].group !== meta.group;
           return (
-            <div key={i} className="flex flex-1 items-center gap-1">
+            <div key={i} className="flex shrink-0 items-center gap-1 sm:flex-1">
               {isGroupStart && (
-                <span className="mx-1 hidden h-3 w-px bg-border sm:block" />
+                <span className="mx-1 h-4 w-px shrink-0 bg-border" />
               )}
               <button
                 type="button"
                 onClick={() => reachable && onJump(i)}
                 disabled={!reachable}
                 className={cn(
-                  "group relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-[var(--transition-smooth)]",
+                  "group relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-[var(--transition-smooth)]",
                   done
                     ? "border-foreground bg-foreground text-background"
                     : active
-                      ? "border-foreground bg-background text-foreground"
+                      ? "border-foreground bg-background text-foreground shadow-[var(--shadow-soft)]"
                       : "border-border bg-background text-muted-foreground",
-                  reachable && !active
-                    ? "cursor-pointer hover:border-foreground"
-                    : "",
-                  !reachable && "cursor-not-allowed opacity-50",
+                  reachable && !active ? "cursor-pointer hover:border-foreground" : "",
+                  !reachable && "cursor-not-allowed opacity-40",
                 )}
                 aria-label={`${meta.short} qadami`}
               >
-                {done ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : (
-                  <Icon className="h-3.5 w-3.5" />
-                )}
+                {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                 {active && (
                   <motion.span
                     layoutId="active-ring"
-                    className="absolute -inset-1 rounded-full ring-2 ring-foreground/20"
+                    className="absolute -inset-1 rounded-full ring-2 ring-foreground/25"
                     transition={{ duration: 0.3 }}
                   />
                 )}
-                {/* Tooltip-style label under each dot, only for current */}
-                {active && (
-                  <span className="pointer-events-none absolute -bottom-5 left-1/2 hidden -translate-x-1/2 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider text-foreground sm:block">
-                    {meta.short}
-                  </span>
-                )}
               </button>
-              {i < STEP_META.length - 1 && (
+              {i < STEP_META.length - 1 && !isGroupStart && (
                 <div
                   className={cn(
-                    "h-[2px] flex-1 rounded-full transition-[var(--transition-smooth)]",
+                    "hidden h-[2px] w-6 rounded-full transition-[var(--transition-smooth)] sm:block sm:w-auto sm:flex-1",
                     i < step ? "bg-foreground" : "bg-border",
                   )}
                 />
@@ -1054,8 +1047,62 @@ function StepIndicator({
           );
         })}
       </div>
-      {/* Spacer for tooltip labels under active dot on desktop */}
-      <div className="hidden h-3 sm:block" />
+    </div>
+  );
+}
+
+/* ============================================================
+   Group chip — large pill shown at very top of indicator
+   ============================================================ */
+
+function GroupChip({
+  icon: Icon,
+  label,
+  state,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  state: "idle" | "active" | "done";
+}) {
+  return (
+    <motion.div
+      initial={false}
+      animate={{
+        scale: state === "active" ? 1.04 : 1,
+      }}
+      transition={{ duration: 0.3 }}
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition-[var(--transition-smooth)] sm:gap-2.5 sm:px-4 sm:py-2",
+        state === "active" &&
+          "border-foreground bg-foreground text-background shadow-[var(--shadow-pop)]",
+        state === "done" && "border-foreground/40 bg-card text-foreground",
+        state === "idle" && "border-border bg-muted/40 text-muted-foreground",
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-7 w-7 items-center justify-center rounded-full sm:h-8 sm:w-8",
+          state === "active" && "bg-background text-foreground",
+          state === "done" && "bg-foreground text-background",
+          state === "idle" && "bg-background text-muted-foreground",
+        )}
+      >
+        {state === "done" ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+      </span>
+      <span className="text-xs font-semibold tracking-wide sm:text-sm">{label}</span>
+    </motion.div>
+  );
+}
+
+function GroupConnector({ filled }: { filled: boolean }) {
+  return (
+    <div className="relative h-[2px] w-10 overflow-hidden rounded-full bg-border sm:w-20">
+      <motion.div
+        className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+        initial={false}
+        animate={{ width: filled ? "100%" : "0%" }}
+        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      />
     </div>
   );
 }

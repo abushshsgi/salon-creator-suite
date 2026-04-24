@@ -1189,11 +1189,11 @@ function GroupChip({
     <motion.div
       initial={false}
       animate={{
-        scale: state === "active" ? 1.04 : 1,
+        scale: state === "active" ? 1.03 : 1,
       }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition-[var(--transition-smooth)] sm:gap-2.5 sm:px-4 sm:py-2",
+        "inline-flex items-center gap-1.5 rounded-full border px-2 py-1 transition-[var(--transition-smooth)] sm:gap-2 sm:px-2.5 sm:py-1.5",
         state === "active" &&
           "border-foreground bg-foreground text-background shadow-[var(--shadow-pop)]",
         state === "done" && "border-foreground/40 bg-card text-foreground",
@@ -1202,22 +1202,22 @@ function GroupChip({
     >
       <span
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-full sm:h-8 sm:w-8",
+          "flex h-5 w-5 items-center justify-center rounded-full sm:h-6 sm:w-6",
           state === "active" && "bg-background text-foreground",
           state === "done" && "bg-foreground text-background",
           state === "idle" && "bg-background text-muted-foreground",
         )}
       >
-        {state === "done" ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+        {state === "done" ? <Check className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
       </span>
-      <span className="text-xs font-semibold tracking-wide sm:text-sm">{label}</span>
+      <span className="text-[11px] font-semibold tracking-wide sm:text-xs">{label}</span>
     </motion.div>
   );
 }
 
 function GroupConnector({ filled }: { filled: boolean }) {
   return (
-    <div className="relative h-[2px] w-10 overflow-hidden rounded-full bg-border sm:w-20">
+    <div className="relative h-[2px] w-8 overflow-hidden rounded-full bg-border sm:w-14">
       <motion.div
         className="absolute inset-y-0 left-0 rounded-full bg-foreground"
         initial={false}

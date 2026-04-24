@@ -1992,211 +1992,137 @@ function SuccessOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-background/85 px-4 py-6 backdrop-blur-xl"
+      transition={{ duration: 0.4 }}
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-background/95 px-5 py-6 backdrop-blur-2xl"
     >
-      {/* Radial spotlight */}
+      {/* Subtle gradient backdrop */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 opacity-50"
         style={{
           background:
-            "radial-gradient(ellipse 60% 50% at center, color-mix(in oklab, var(--foreground) 8%, transparent) 0%, transparent 70%)",
+            "radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--foreground) 5%, transparent) 0%, transparent 60%)",
         }}
       />
 
-      {/* Falling confetti */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {Array.from({ length: 28 }).map((_, i) => {
-          const left = (i * 37) % 100;
-          const delay = (i % 8) * 0.06;
-          const size = 5 + (i % 5) * 2;
-          const variant = i % 4;
-          return (
-            <motion.span
-              key={i}
-              initial={{ y: "-15vh", opacity: 0, rotate: 0 }}
-              animate={{
-                y: ["-15vh", "115vh"],
-                opacity: [0, 1, 1, 0],
-                rotate: variant % 2 === 0 ? 540 : -540,
-                x: variant === 0 ? [0, 30, -20, 10] : variant === 1 ? [0, -25, 15, -5] : 0,
-              }}
-              transition={{
-                duration: 2.4 + (i % 5) * 0.35,
-                delay,
-                ease: "easeIn",
-              }}
-              style={{
-                left: `${left}%`,
-                width: size,
-                height: variant === 3 ? size * 2 : size,
-              }}
-              className={cn(
-                "absolute",
-                variant === 0 && "rounded-full bg-foreground",
-                variant === 1 && "rounded-sm bg-foreground/50",
-                variant === 2 && "rounded-sm border border-foreground bg-background",
-                variant === 3 && "rounded-[1px] bg-foreground/70",
-              )}
-            />
-          );
-        })}
-      </div>
-
-      {/* Burst rays from center */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <motion.span
-            key={`ray-${i}`}
-            initial={{ scaleY: 0, opacity: 0 }}
-            animate={{ scaleY: [0, 1, 0], opacity: [0, 0.5, 0] }}
-            transition={{ duration: 1, delay: 0.2 + i * 0.02, ease: "easeOut" }}
-            style={{
-              transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-90px)`,
-              transformOrigin: "center bottom",
-            }}
-            className="absolute left-0 top-0 h-12 w-0.5 origin-bottom rounded-full bg-foreground/40"
-          />
-        ))}
-      </div>
-
       <motion.div
-        initial={{ scale: 0.85, opacity: 0, y: 24 }}
+        initial={{ scale: 0.96, opacity: 0, y: 16 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.92, opacity: 0, y: 8 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="relative my-auto w-full max-w-[420px] overflow-hidden rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-pop)] sm:p-9"
+        exit={{ scale: 0.98, opacity: 0, y: 4 }}
+        transition={{ type: "spring", stiffness: 280, damping: 26 }}
+        className="relative my-auto w-full max-w-[420px] text-center"
       >
-        {/* Soft top gradient */}
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-32"
-          style={{
-            background:
-              "linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 6%, transparent), transparent)",
-          }}
-        />
-
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute right-2.5 top-2.5 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-background/60 text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground sm:h-8 sm:w-8"
-          aria-label="Yopish"
+        {/* Big number — celebrates the moment without an icon */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="mb-6 flex flex-col items-center"
         >
-          <X className="h-4 w-4" />
-        </button>
-
-        {/* Animated checkmark */}
-        <div className="relative mx-auto mb-5 flex h-24 w-24 items-center justify-center sm:h-28 sm:w-28">
-          {/* pulse rings */}
-          <motion.span
-            className="absolute inset-0 rounded-full bg-foreground/10"
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: [0.6, 1.6], opacity: [0.7, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-          />
-          <motion.span
-            className="absolute inset-2 rounded-full bg-foreground/15"
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: [0.6, 1.4], opacity: [0.7, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay: 0.4 }}
-          />
-          {/* core circle */}
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.15 }}
-            className="relative flex h-20 w-20 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)] sm:h-24 sm:w-24"
+          {/* Animated single arc — minimal, elegant */}
+          <motion.svg
+            viewBox="0 0 80 80"
+            className="mb-4 h-16 w-16 sm:h-20 sm:w-20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
           >
-            <motion.svg
-              viewBox="0 0 32 32"
-              className="h-10 w-10 sm:h-12 sm:w-12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={3.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <motion.path
-                d="M7 16.5 L13.5 23 L25 10"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 0.55, delay: 0.45, ease: "easeOut" }}
-              />
-            </motion.svg>
-          </motion.div>
-        </div>
+            <motion.circle
+              cx="40"
+              cy="40"
+              r="36"
+              className="text-muted/60"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            />
+            <motion.path
+              d="M26 41 L36 51 L55 30"
+              className="text-foreground"
+              strokeWidth={3}
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.5, delay: 0.55, ease: "easeOut" }}
+            />
+          </motion.svg>
 
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.35 }}
-        >
-          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-[var(--shadow-soft)]">
-            <Sparkles className="h-2.5 w-2.5" />
+          <motion.span
+            initial={{ opacity: 0, letterSpacing: "0.2em" }}
+            animate={{ opacity: 1, letterSpacing: "0.18em" }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+          >
             Tabriklaymiz
-          </div>
-          <h2 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
-            Hammasi tayyor! 🎉
-          </h2>
-          <p className="mx-auto mt-2 max-w-[320px] text-[13px] leading-snug text-muted-foreground sm:text-sm">
-            <span className="font-semibold text-foreground">
-              {salonName || "Salon"}
-            </span>{" "}
-            va barber profili muvaffaqiyatli yaratildi. Endi mijozlar sizni topa oladi.
-          </p>
+          </motion.span>
         </motion.div>
 
-        {/* Summary card */}
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, y: 12 }}
+        {/* Title */}
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75, duration: 0.35 }}
+          transition={{ delay: 0.65, duration: 0.4 }}
+          className="text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
         >
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background/60 p-2.5 text-left">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
-                <Store className="h-3.5 w-3.5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Salon
-                </div>
-                <div className="truncate text-xs font-bold text-foreground">
-                  {salonName || "—"}
-                </div>
-              </div>
+          Hammasi tayyor
+        </motion.h2>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.75, duration: 0.4 }}
+          className="mx-auto mt-3 max-w-[300px] text-[13px] leading-relaxed text-muted-foreground sm:text-sm"
+        >
+          Saloningiz va profilingiz muvaffaqiyatli yaratildi. Endi mijozlar sizni topa oladi.
+        </motion.p>
+
+        {/* Light info row — no boxes, no icons */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.85, duration: 0.4 }}
+          className="mx-auto mt-7 flex max-w-[340px] items-stretch justify-center divide-x divide-border"
+        >
+          <div className="flex-1 px-3">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Salon
             </div>
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background/60 p-2.5 text-left">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
-                <User className="h-3.5 w-3.5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Barber
-                </div>
-                <div className="truncate text-xs font-bold text-foreground">
-                  {barberName || "—"}
-                </div>
-              </div>
+            <div className="mt-0.5 truncate text-sm font-bold text-foreground">
+              {salonName || "—"}
+            </div>
+          </div>
+          <div className="flex-1 px-3">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Barber
+            </div>
+            <div className="mt-0.5 truncate text-sm font-bold text-foreground">
+              {barberName || "—"}
             </div>
           </div>
         </motion.div>
 
+        {/* Primary action */}
         <motion.button
-          className="relative"
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.35 }}
+          transition={{ delay: 1.0, duration: 0.4 }}
           onClick={onClose}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background transition-colors hover:opacity-90"
         >
-          <span className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-foreground px-5 text-sm font-bold text-background shadow-[var(--shadow-pop)] sm:h-11">
-            Davom etish
-            <ArrowRight className="h-4 w-4" />
-          </span>
+          Davom etish
+        </motion.button>
+
+        {/* Secondary close */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.15, duration: 0.4 }}
+          onClick={onClose}
+          className="mt-2 inline-flex h-10 w-full items-center justify-center text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Yopish
         </motion.button>
       </motion.div>
     </motion.div>

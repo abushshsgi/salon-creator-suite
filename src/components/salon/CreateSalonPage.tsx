@@ -259,6 +259,10 @@ export function CreateSalonPage() {
                 setSalonPhoneDigits={setSalonPhoneDigits}
                 salonAddress={salonAddress}
                 setSalonAddress={setSalonAddress}
+                salonCity={salonCity}
+                setSalonCity={setSalonCity}
+                salonLandmark={salonLandmark}
+                setSalonLandmark={setSalonLandmark}
                 cover={cover}
                 setCover={setCover}
                 coverDrag={coverDrag}

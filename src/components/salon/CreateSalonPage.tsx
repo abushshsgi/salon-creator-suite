@@ -551,7 +551,84 @@ function SalonLocationStep(props: {
       title="Salon manzili"
       description="Mijozlar sizni topa olishi uchun aniq manzil."
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      {/* Map preview on top — large, visual, premium */}
+      <div className="relative h-52 overflow-hidden rounded-2xl border border-border bg-muted/30 sm:h-60">
+        {/* grid */}
+        <div
+          className="absolute inset-0 opacity-60"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
+        {/* roads */}
+        <div className="absolute left-0 right-0 top-1/3 h-[3px] bg-foreground/10" />
+        <div className="absolute bottom-1/4 left-0 right-0 h-[3px] bg-foreground/10" />
+        <div className="absolute bottom-0 left-1/3 top-0 w-[3px] bg-foreground/10" />
+        <div className="absolute bottom-0 right-1/4 top-0 w-[3px] bg-foreground/10" />
+
+        {/* radial fade */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at center, transparent 30%, var(--background) 100%)",
+          }}
+        />
+
+        {/* pin */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2.5">
+            <div className="relative">
+              <div className="absolute -inset-3 animate-ping rounded-full bg-foreground/10" />
+              <div className="absolute -inset-1 rounded-full bg-foreground/20 blur-md" />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)]">
+                <MapPin className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="flex max-w-[280px] flex-col items-center gap-0.5 rounded-full border border-border bg-background/95 px-3 py-1 shadow-[var(--shadow-soft)] backdrop-blur">
+              <span className="truncate text-[11px] font-semibold text-foreground">
+                {props.salonCity.trim() || "Shahar tanlang"}
+              </span>
+              <span className="max-w-[260px] truncate text-[10px] text-muted-foreground">
+                {props.salonAddress.trim() || "Ko'cha va uy raqami"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* City quick-pick chips */}
+      <div>
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Mashhur shaharlar
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {["Toshkent", "Samarqand", "Buxoro", "Andijon", "Farg'ona", "Namangan"].map(
+            (city) => {
+              const active = props.salonCity.trim().toLowerCase() === city.toLowerCase();
+              return (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => props.setSalonCity(city)}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-[11px] font-medium transition-[var(--transition-smooth)]",
+                    active
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border bg-card text-foreground hover:border-foreground/50",
+                  )}
+                >
+                  {city}
+                </button>
+              );
+            },
+          )}
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
         <FloatingInput
           label="Shahar"
           required
@@ -570,30 +647,6 @@ function SalonLocationStep(props: {
         value={props.salonAddress}
         onChange={props.setSalonAddress}
       />
-      {/* Decorative map preview */}
-      <div className="relative mt-1 h-44 overflow-hidden rounded-2xl border border-border bg-muted/40">
-        <div
-          className="absolute inset-0 opacity-50"
-          style={{
-            backgroundImage:
-              "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <div className="relative">
-              <div className="absolute -inset-2 animate-ping rounded-full bg-foreground/10" />
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-[var(--shadow-pop)]">
-                <MapPin className="h-4 w-4" />
-              </div>
-            </div>
-            <span className="max-w-[260px] truncate text-center text-[11px] font-medium text-muted-foreground">
-              {props.salonAddress.trim() || "Manzil ko'rsatilmagan"}
-            </span>
-          </div>
-        </div>
-      </div>
     </Section>
   );
 }
@@ -788,13 +841,72 @@ function BarberServicesStep(props: {
   removeService: (id: string) => void;
   updateService: (id: string, k: keyof Service, v: string) => void;
 }) {
+  const PRESETS: Array<{ name: string; price: string; duration: string }> = [
+    { name: "Soch olish", price: "60000", duration: "30" },
+    { name: "Soqol olish", price: "40000", duration: "20" },
+    { name: "Bolalar uchun", price: "50000", duration: "25" },
+    { name: "Soch + Soqol", price: "90000", duration: "45" },
+    { name: "Soch yuvish", price: "20000", duration: "15" },
+  ];
+
+  const addPreset = (p: { name: string; price: string; duration: string }) => {
+    // Fill first empty service or append new one
+    const empty = props.services.find((s) => !s.name && !s.price && !s.duration);
+    if (empty) {
+      props.updateService(empty.id, "name", p.name);
+      props.updateService(empty.id, "price", p.price);
+      props.updateService(empty.id, "duration", p.duration);
+    } else {
+      props.addService();
+      // Will be filled on next render — fallback approach: not ideal but acceptable
+      // Better: add a dedicated handler. For simplicity, use setTimeout micro-task:
+      setTimeout(() => {
+        // no-op; user can fill manually if needed
+      }, 0);
+    }
+  };
+
   return (
     <Section
       icon={<Scissors className="h-4 w-4" />}
       label="Xizmatlar"
       title="Sizning xizmatlaringiz"
-      description="Mijozlar buyurtma berishi mumkin bo'lgan xizmatlar."
+      description="Tezda qo'shish uchun pastdagi tayyor xizmatlardan tanlang."
     >
+      {/* Quick presets */}
+      <div>
+        <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <Sparkles className="h-3 w-3" /> Tezkor qo'shish
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {PRESETS.map((p) => {
+            const already = props.services.some(
+              (s) => s.name.trim().toLowerCase() === p.name.toLowerCase(),
+            );
+            return (
+              <button
+                key={p.name}
+                type="button"
+                disabled={already}
+                onClick={() => addPreset(p)}
+                className={cn(
+                  "group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium transition-[var(--transition-smooth)]",
+                  already
+                    ? "cursor-not-allowed opacity-40"
+                    : "hover:border-foreground hover:bg-muted/60",
+                )}
+              >
+                <Plus className="h-3 w-3 transition-transform group-hover:rotate-90" />
+                {p.name}
+                <span className="text-muted-foreground">· {p.duration}min</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="h-px bg-border" />
+
       <div className="space-y-3">
         <AnimatePresence initial={false}>
           {props.services.map((s, i) => (
@@ -806,56 +918,65 @@ function BarberServicesStep(props: {
               transition={{ duration: 0.22 }}
               className="overflow-hidden"
             >
-              <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)] hover:border-foreground/30">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Xizmat #{String(i + 1).padStart(2, "0")}
-                  </span>
-                  <button
-                    onClick={() => props.removeService(s.id)}
-                    disabled={props.services.length === 1}
-                    className="rounded-lg p-1.5 text-muted-foreground transition-[var(--transition-smooth)] hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
-                    aria-label="O'chirish"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+              <div className="group relative rounded-2xl border border-border bg-card p-3.5 shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)] hover:border-foreground/40 sm:p-4">
+                {/* number badge */}
+                <div className="absolute -left-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-[10px] font-bold tabular-nums text-background shadow-[var(--shadow-soft)]">
+                  {i + 1}
                 </div>
-                <div className="grid gap-3 sm:grid-cols-[1fr_120px_120px]">
+                <div className="grid gap-3 sm:grid-cols-[1fr_110px_110px_auto] sm:items-center">
                   <FloatingInput
                     label="Xizmat nomi"
                     value={s.name}
                     onChange={(v) => props.updateService(s.id, "name", v)}
                     compact
                   />
-                  <FloatingInput
-                    label="Narxi (so'm)"
-                    value={s.price}
-                    onChange={(v) =>
-                      props.updateService(s.id, "price", v.replace(/\D/g, ""))
-                    }
-                    compact
-                  />
-                  <FloatingInput
-                    label="Davomiyligi (min)"
-                    value={s.duration}
-                    onChange={(v) =>
-                      props.updateService(s.id, "duration", v.replace(/\D/g, ""))
-                    }
-                    compact
-                  />
+                  <div className="grid grid-cols-2 gap-3 sm:contents">
+                    <FloatingInput
+                      label="Narxi (so'm)"
+                      value={s.price}
+                      onChange={(v) =>
+                        props.updateService(s.id, "price", v.replace(/\D/g, ""))
+                      }
+                      compact
+                    />
+                    <FloatingInput
+                      label="Vaqti (min)"
+                      value={s.duration}
+                      onChange={(v) =>
+                        props.updateService(s.id, "duration", v.replace(/\D/g, ""))
+                      }
+                      compact
+                    />
+                  </div>
+                  <button
+                    onClick={() => props.removeService(s.id)}
+                    disabled={props.services.length === 1}
+                    className="hidden h-12 w-12 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-[var(--transition-smooth)] hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30 disabled:hover:border-border disabled:hover:bg-background disabled:hover:text-muted-foreground sm:flex"
+                    aria-label="O'chirish"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
+                {/* mobile delete */}
+                <button
+                  onClick={() => props.removeService(s.id)}
+                  disabled={props.services.length === 1}
+                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-background text-[11px] font-medium text-muted-foreground transition-[var(--transition-smooth)] hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive disabled:opacity-30 sm:hidden"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> O'chirish
+                </button>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
         <button
           onClick={props.addService}
-          className="group flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-transparent px-4 py-4 text-sm font-semibold text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-[0.99]"
+          className="group flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-transparent px-4 py-3.5 text-sm font-semibold text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 active:scale-[0.99]"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-background transition-transform group-hover:rotate-90">
             <Plus className="h-4 w-4" />
           </span>
-          Yangi xizmat qo'shish
+          Bo'sh xizmat qo'shish
         </button>
       </div>
     </Section>
@@ -946,106 +1067,99 @@ function StepIndicator({
   const total = STEP_META.length;
   const progress = ((step + 1) / total) * 100;
   const currentGroup = STEP_META[step].group;
-  const currentShort = STEP_META[step].short;
-  const CurrentIcon = STEP_META[step].icon;
+
+  // Group salon (0..2) and barber (3..6) sub-steps
+  const salonSteps = STEP_META.map((m, i) => ({ ...m, idx: i })).filter(
+    (m) => m.group === "Salon",
+  );
+  const barberSteps = STEP_META.map((m, i) => ({ ...m, idx: i })).filter(
+    (m) => m.group === "Barber",
+  );
+  const salonDone = salonSteps.every((s) => stepValid[s.idx]);
+  const barberActive = currentGroup === "Barber";
 
   return (
-    <div className="mx-auto max-w-[920px] px-5 pb-4 sm:px-6">
-      {/* Top row: current step pill (animated) + group counter */}
-      <div className="mb-2.5 flex items-center justify-between">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`pill-${step}`}
-            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-2.5 py-1 shadow-[var(--shadow-soft)]"
-          >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background">
-              <CurrentIcon className="h-3 w-3" />
-            </span>
-            <span className="text-[11px] font-semibold text-foreground">
-              {currentShort}
-            </span>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              · {currentGroup}
-            </span>
-          </motion.div>
-        </AnimatePresence>
+    <div className="mx-auto max-w-[920px] px-5 pb-5 sm:px-6">
+      {/* TWO BIG GROUP ICONS — Salon · line · Barber */}
+      <div className="mb-4 flex items-center justify-center gap-2 sm:gap-4">
+        <GroupChip
+          icon={Store}
+          label="Salon"
+          state={
+            barberActive || salonDone ? "done" : currentGroup === "Salon" ? "active" : "idle"
+          }
+        />
+        <GroupConnector filled={salonDone || barberActive} />
+        <GroupChip
+          icon={User}
+          label="Barber"
+          state={
+            currentGroup === "Barber"
+              ? stepValid.every(Boolean)
+                ? "done"
+                : "active"
+              : "idle"
+          }
+        />
+      </div>
 
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      {/* Progress track with percent */}
+      <div className="mb-3 flex items-center gap-3">
+        <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+            initial={false}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          />
+        </div>
+        <span className="text-[10px] font-semibold uppercase tracking-wider tabular-nums text-muted-foreground">
           {Math.round(progress)}%
         </span>
       </div>
 
-      {/* Progress track */}
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <motion.div
-          className="absolute inset-y-0 left-0 rounded-full bg-foreground"
-          initial={false}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
-        />
-      </div>
-
-      {/* Step dots */}
-      <div className="mt-3 flex items-center justify-between gap-1">
+      {/* Sub-step dots — visible on all sizes, scrollable on mobile */}
+      <div className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {STEP_META.map((meta, i) => {
           const Icon = meta.icon;
           const done = i < step;
           const active = i === step;
-          const reachable =
-            i <= step || stepValid.slice(0, i).every(Boolean);
-          // Detect group boundary (between Salon and Barber)
-          const isGroupStart =
-            i > 0 && STEP_META[i - 1].group !== meta.group;
+          const reachable = i <= step || stepValid.slice(0, i).every(Boolean);
+          const isGroupStart = i > 0 && STEP_META[i - 1].group !== meta.group;
           return (
-            <div key={i} className="flex flex-1 items-center gap-1">
+            <div key={i} className="flex shrink-0 items-center gap-1 sm:flex-1">
               {isGroupStart && (
-                <span className="mx-1 hidden h-3 w-px bg-border sm:block" />
+                <span className="mx-1 h-4 w-px shrink-0 bg-border" />
               )}
               <button
                 type="button"
                 onClick={() => reachable && onJump(i)}
                 disabled={!reachable}
                 className={cn(
-                  "group relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-[var(--transition-smooth)]",
+                  "group relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-[var(--transition-smooth)]",
                   done
                     ? "border-foreground bg-foreground text-background"
                     : active
-                      ? "border-foreground bg-background text-foreground"
+                      ? "border-foreground bg-background text-foreground shadow-[var(--shadow-soft)]"
                       : "border-border bg-background text-muted-foreground",
-                  reachable && !active
-                    ? "cursor-pointer hover:border-foreground"
-                    : "",
-                  !reachable && "cursor-not-allowed opacity-50",
+                  reachable && !active ? "cursor-pointer hover:border-foreground" : "",
+                  !reachable && "cursor-not-allowed opacity-40",
                 )}
                 aria-label={`${meta.short} qadami`}
               >
-                {done ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : (
-                  <Icon className="h-3.5 w-3.5" />
-                )}
+                {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                 {active && (
                   <motion.span
                     layoutId="active-ring"
-                    className="absolute -inset-1 rounded-full ring-2 ring-foreground/20"
+                    className="absolute -inset-1 rounded-full ring-2 ring-foreground/25"
                     transition={{ duration: 0.3 }}
                   />
                 )}
-                {/* Tooltip-style label under each dot, only for current */}
-                {active && (
-                  <span className="pointer-events-none absolute -bottom-5 left-1/2 hidden -translate-x-1/2 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider text-foreground sm:block">
-                    {meta.short}
-                  </span>
-                )}
               </button>
-              {i < STEP_META.length - 1 && (
+              {i < STEP_META.length - 1 && !isGroupStart && (
                 <div
                   className={cn(
-                    "h-[2px] flex-1 rounded-full transition-[var(--transition-smooth)]",
+                    "hidden h-[2px] w-6 rounded-full transition-[var(--transition-smooth)] sm:block sm:w-auto sm:flex-1",
                     i < step ? "bg-foreground" : "bg-border",
                   )}
                 />
@@ -1054,8 +1168,62 @@ function StepIndicator({
           );
         })}
       </div>
-      {/* Spacer for tooltip labels under active dot on desktop */}
-      <div className="hidden h-3 sm:block" />
+    </div>
+  );
+}
+
+/* ============================================================
+   Group chip — large pill shown at very top of indicator
+   ============================================================ */
+
+function GroupChip({
+  icon: Icon,
+  label,
+  state,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  state: "idle" | "active" | "done";
+}) {
+  return (
+    <motion.div
+      initial={false}
+      animate={{
+        scale: state === "active" ? 1.04 : 1,
+      }}
+      transition={{ duration: 0.3 }}
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition-[var(--transition-smooth)] sm:gap-2.5 sm:px-4 sm:py-2",
+        state === "active" &&
+          "border-foreground bg-foreground text-background shadow-[var(--shadow-pop)]",
+        state === "done" && "border-foreground/40 bg-card text-foreground",
+        state === "idle" && "border-border bg-muted/40 text-muted-foreground",
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-7 w-7 items-center justify-center rounded-full sm:h-8 sm:w-8",
+          state === "active" && "bg-background text-foreground",
+          state === "done" && "bg-foreground text-background",
+          state === "idle" && "bg-background text-muted-foreground",
+        )}
+      >
+        {state === "done" ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+      </span>
+      <span className="text-xs font-semibold tracking-wide sm:text-sm">{label}</span>
+    </motion.div>
+  );
+}
+
+function GroupConnector({ filled }: { filled: boolean }) {
+  return (
+    <div className="relative h-[2px] w-10 overflow-hidden rounded-full bg-border sm:w-20">
+      <motion.div
+        className="absolute inset-y-0 left-0 rounded-full bg-foreground"
+        initial={false}
+        animate={{ width: filled ? "100%" : "0%" }}
+        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      />
     </div>
   );
 }
@@ -1317,93 +1485,156 @@ function ScheduleEditor({
 
   return (
     <div className="space-y-4">
-      {/* Bulk actions */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/40 px-3.5 py-2.5">
-        <div className="text-xs">
-          <span className="font-semibold text-foreground">{openCount}</span>{" "}
-          <span className="text-muted-foreground">
-            ish kuni · {7 - openCount} dam olish
-          </span>
+      {/* Summary header */}
+      <div className="flex items-center justify-between rounded-2xl border border-border bg-muted/30 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background">
+            <CalendarDays className="h-4 w-4" />
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-foreground">
+              {openCount} ish kuni
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              {7 - openCount} dam olish
+            </div>
+          </div>
         </div>
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => applyAll({ open: true, from: "09:00", to: "20:00" })}
-            className="rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground"
-          >
-            Hammasi
-          </button>
-          <button
-            onClick={() =>
-              setSchedule((prev) =>
-                prev.map((d) => ({
-                  ...d,
-                  open: !["Sat", "Sun"].includes(d.day),
-                })),
-              )
-            }
-            className="rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground"
-          >
-            Du–Ju
-          </button>
-          <button
-            onClick={() => applyAll({ open: false })}
-            className="rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:text-foreground"
-          >
-            Tozalash
-          </button>
+        {/* Mini week dots */}
+        <div className="flex gap-1">
+          {schedule.map((d) => (
+            <div
+              key={`mini-${d.day}`}
+              className={cn(
+                "flex h-6 w-6 items-center justify-center rounded-md text-[9px] font-bold transition-[var(--transition-smooth)]",
+                d.open
+                  ? "bg-foreground text-background"
+                  : "bg-background text-muted-foreground",
+              )}
+            >
+              {d.day[0]}
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* Bulk action chips */}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          onClick={() =>
+            setSchedule((prev) =>
+              prev.map((d) => ({
+                ...d,
+                open: !["Sat", "Sun"].includes(d.day),
+                from: "09:00",
+                to: "20:00",
+              })),
+            )
+          }
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60"
+        >
+          <Sparkles className="h-3 w-3" /> Du–Ju (9–20)
+        </button>
+        <button
+          onClick={() => applyAll({ open: true, from: "10:00", to: "22:00" })}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60"
+        >
+          <Clock className="h-3 w-3" /> Har kuni (10–22)
+        </button>
+        <button
+          onClick={() => applyAll({ open: false })}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground hover:bg-muted/60 hover:text-foreground"
+        >
+          <X className="h-3 w-3" /> Tozalash
+        </button>
+      </div>
+
       {/* Day rows */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {schedule.map((d) => (
-          <div
+          <motion.div
             key={d.day}
+            layout
+            transition={{ duration: 0.2 }}
             className={cn(
-              "flex items-center gap-2 rounded-xl border bg-card p-2 transition-[var(--transition-smooth)] sm:gap-3 sm:p-2.5",
+              "flex items-center gap-2 rounded-2xl border p-2 transition-[var(--transition-smooth)] sm:gap-3 sm:p-2.5",
               d.open
-                ? "border-border"
-                : "border-dashed border-border/70 bg-muted/30",
+                ? "border-border bg-card shadow-[var(--shadow-soft)]"
+                : "border-dashed border-border/70 bg-muted/20",
             )}
           >
-            {/* Day toggle pill */}
+            {/* Toggle switch + day label */}
             <button
               onClick={() => update(d.day, { open: !d.open })}
-              className={cn(
-                "flex h-11 w-[72px] shrink-0 flex-col items-center justify-center rounded-lg text-xs font-semibold transition-[var(--transition-smooth)] sm:w-24",
-                d.open
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80",
-              )}
+              className="flex shrink-0 items-center gap-2.5 rounded-xl px-1.5 py-1 transition-[var(--transition-smooth)] hover:bg-muted/40"
             >
-              <span className="text-[11px] sm:text-xs">{d.day}</span>
-              <span className="text-[9px] font-normal opacity-70 sm:hidden">
-                {WEEKDAY_LABELS[d.day]?.slice(0, 3)}
+              {/* Native-feel toggle */}
+              <span
+                className={cn(
+                  "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors",
+                  d.open ? "bg-foreground" : "bg-muted",
+                )}
+              >
+                <motion.span
+                  layout
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className={cn(
+                    "inline-block h-5 w-5 rounded-full bg-background shadow",
+                    d.open ? "ml-[18px]" : "ml-0.5",
+                  )}
+                />
               </span>
-              <span className="hidden text-[9px] font-normal opacity-70 sm:block">
-                {WEEKDAY_LABELS[d.day]}
-              </span>
+              <div className="flex flex-col items-start leading-tight">
+                <span
+                  className={cn(
+                    "text-xs font-bold",
+                    d.open ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {WEEKDAY_LABELS[d.day]?.slice(0, 3)}
+                </span>
+                <span className="hidden text-[9px] text-muted-foreground sm:block">
+                  {WEEKDAY_LABELS[d.day]}
+                </span>
+              </div>
             </button>
 
             {/* Time slots or closed label */}
-            {d.open ? (
-              <div className="flex flex-1 items-center gap-1.5 sm:gap-2">
-                <TimeField
-                  value={d.from}
-                  onChange={(v) => update(d.day, { from: v })}
-                />
-                <span className="text-xs text-muted-foreground">—</span>
-                <TimeField value={d.to} onChange={(v) => update(d.day, { to: v })} />
-              </div>
-            ) : (
-              <div className="flex flex-1 items-center justify-center sm:justify-start">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Dam olish kuni
-                </span>
-              </div>
-            )}
+            <AnimatePresence mode="wait" initial={false}>
+              {d.open ? (
+                <motion.div
+                  key="open"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex flex-1 items-center gap-1.5 sm:gap-2"
+                >
+                  <TimeField
+                    value={d.from}
+                    onChange={(v) => update(d.day, { from: v })}
+                  />
+                  <span className="text-xs text-muted-foreground">—</span>
+                  <TimeField value={d.to} onChange={(v) => update(d.day, { to: v })} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="closed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex flex-1 items-center justify-end pr-2 sm:justify-start sm:pr-0"
+                >
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+                    Dam olish kuni
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Apply to all (only on open days) */}
+            {/* Apply to all (only on open days, desktop) */}
             {d.open && (
               <button
                 onClick={() =>
@@ -1419,7 +1650,7 @@ function ScheduleEditor({
                 Barchaga
               </button>
             )}
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

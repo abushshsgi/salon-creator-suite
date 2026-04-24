@@ -278,7 +278,7 @@ export function CreateSalonPage() {
   const currentMeta = STEP_META[step];
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-28 sm:pb-32">
       {/* Success overlay */}
       <AnimatePresence>
         {success && (
@@ -319,7 +319,7 @@ export function CreateSalonPage() {
         }} />
       </header>
 
-      <main className="mx-auto max-w-[920px] px-5 pt-10 sm:px-6 sm:pt-14">
+      <main className="mx-auto max-w-[920px] px-4 pt-8 sm:px-6 sm:pt-14">
         {/* Animated hero — changes per step */}
         <div className="mb-7 overflow-hidden text-center sm:mb-10">
           <AnimatePresence mode="wait" custom={direction}>

@@ -219,7 +219,6 @@ export function CreateSalonPage() {
     languages,
   ]);
 
-  const TOTAL_STEPS = 7;
   const isLast = step === TOTAL_STEPS - 1;
   const canNext = stepValid[step];
   const allValid = stepValid.every(Boolean);

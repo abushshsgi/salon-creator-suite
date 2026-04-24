@@ -211,13 +211,15 @@ export function CreateSalonPage() {
   };
 
   const handleSubmit = async () => {
-    if (!salonValid || !barberValid || submitting) return;
+    if (!allValid || submitting) return;
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 1400));
     setSubmitting(false);
     setSuccess(true);
     setTimeout(() => setSuccess(false), 2400);
   };
+
+  const currentMeta = STEP_META[step];
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -230,67 +232,95 @@ export function CreateSalonPage() {
             </div>
             <span className="text-sm font-semibold tracking-tight">Barber Studio</span>
           </div>
-          <span className="text-xs font-medium text-muted-foreground">
-            {step + 1} / 2
+          <span className="text-xs font-medium tabular-nums text-muted-foreground">
+            <span className="text-foreground">{step + 1}</span>
+            <span className="opacity-50"> / {TOTAL_STEPS}</span>
           </span>
         </div>
-        <StepIndicator step={step} salonValid={salonValid} />
+        <StepIndicator step={step} stepValid={stepValid} onJump={(i) => {
+          // Allow jumping back freely; jumping forward only if all preceding steps are valid
+          if (i === step) return;
+          if (i < step) {
+            setDirection(-1);
+            setStep(i);
+          } else {
+            const canReach = stepValid.slice(0, i).every(Boolean);
+            if (!canReach) return;
+            setDirection(1);
+            setStep(i);
+          }
+        }} />
       </header>
 
       <main className="mx-auto max-w-[920px] px-5 pt-10 sm:px-6 sm:pt-14">
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-10 text-center"
-        >
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Sparkles className="h-3 w-3" />
-            {step === 0 ? "Salon yaratish" : "Barber profili"}
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            {step === 0 ? "Salon haqida ma'lumot" : "O'z profilingizni yarating"}
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-            {step === 0
-              ? "Avval salon profilini to'ldiring."
-              : "Endi o'zingiz haqingizda — mijozlar sizni shu ma'lumotlar bilan ko'radi."}
-          </p>
-        </motion.div>
+        {/* Animated hero — changes per step */}
+        <div className="mb-8 overflow-hidden text-center sm:mb-10">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={`hero-${step}`}
+              custom={direction}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background">
+                  <currentMeta.icon className="h-2.5 w-2.5" />
+                </span>
+                {currentMeta.group} · Qadam {step + 1}
+              </div>
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">
+                {currentMeta.title}
+              </h1>
+              <p className="mx-auto mt-3 max-w-[520px] text-sm text-muted-foreground sm:text-base">
+                {currentMeta.subtitle}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={step}
             custom={direction}
-            initial={{ opacity: 0, x: direction > 0 ? 40 : -40 }}
+            initial={{ opacity: 0, x: direction > 0 ? 60 : -60 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction > 0 ? -40 : 40 }}
-            transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
+            exit={{ opacity: 0, x: direction > 0 ? -60 : 60 }}
+            transition={{ duration: 0.36, ease: [0.4, 0, 0.2, 1] }}
             className="space-y-5 sm:space-y-6"
           >
-            {step === 0 ? (
-              <SalonStep
+            {step === 0 && (
+              <SalonInfoStep
                 salonName={salonName}
                 setSalonName={setSalonName}
                 salonDescription={salonDescription}
                 setSalonDescription={setSalonDescription}
                 salonPhoneDigits={salonPhoneDigits}
                 setSalonPhoneDigits={setSalonPhoneDigits}
-                salonAddress={salonAddress}
-                setSalonAddress={setSalonAddress}
+              />
+            )}
+            {step === 1 && (
+              <SalonLocationStep
                 salonCity={salonCity}
                 setSalonCity={setSalonCity}
                 salonLandmark={salonLandmark}
                 setSalonLandmark={setSalonLandmark}
+                salonAddress={salonAddress}
+                setSalonAddress={setSalonAddress}
+              />
+            )}
+            {step === 2 && (
+              <SalonCoverStep
                 cover={cover}
                 setCover={setCover}
                 coverDrag={coverDrag}
                 setCoverDrag={setCoverDrag}
                 handleCoverFile={handleCoverFile}
               />
-            ) : (
-              <BarberStep
+            )}
+            {step === 3 && (
+              <BarberProfileStep
                 firstName={barberFirstName}
                 setFirstName={setBarberFirstName}
                 lastName={barberLastName}
@@ -298,14 +328,25 @@ export function CreateSalonPage() {
                 phoneDigits={barberPhoneDigits}
                 setPhoneDigits={setBarberPhoneDigits}
                 avatar={barberAvatar}
-                setAvatar={setBarberAvatar}
                 handleAvatarFile={handleAvatarFile}
+              />
+            )}
+            {step === 4 && (
+              <BarberServicesStep
                 services={services}
                 addService={addService}
                 removeService={removeService}
                 updateService={updateService}
+              />
+            )}
+            {step === 5 && (
+              <BarberScheduleStep
                 schedule={schedule}
                 setSchedule={setSchedule}
+              />
+            )}
+            {step === 6 && (
+              <BarberLanguagesStep
                 languages={languages}
                 toggleLanguage={toggleLanguage}
               />
@@ -331,36 +372,44 @@ export function CreateSalonPage() {
             <span className="hidden sm:inline">Orqaga</span>
           </button>
 
-          <p className="hidden flex-1 text-center text-xs text-muted-foreground sm:block">
-            {step === 0
-              ? salonValid
-                ? "Salon ma'lumotlari to'liq"
-                : "Salon ma'lumotlarini to'ldiring"
-              : barberValid
-                ? "Barber profili tayyor — saqlash mumkin"
-                : "Barber profilini to'ldiring"}
-          </p>
+          <div className="hidden flex-1 items-center justify-center gap-2 text-xs sm:flex">
+            <span className="text-muted-foreground">Hozirgi qadam:</span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={`crumb-${step}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 font-semibold text-foreground"
+              >
+                <currentMeta.icon className="h-3 w-3" />
+                {currentMeta.short}
+              </motion.span>
+            </AnimatePresence>
+          </div>
 
-          {step === 0 ? (
+          {!isLast ? (
             <button
               onClick={goNext}
-              disabled={!salonValid}
+              disabled={!canNext}
               className={cn(
-                "inline-flex h-11 min-w-[150px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
-                salonValid
+                "group inline-flex h-11 min-w-[140px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:min-w-[170px]",
+                canNext
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",
               )}
             >
-              Keyingisi <ArrowRight className="h-4 w-4" />
+              Keyingisi
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </button>
           ) : (
             <button
-              disabled={!barberValid || submitting}
+              disabled={!allValid || submitting}
               onClick={handleSubmit}
               className={cn(
                 "inline-flex h-11 min-w-[160px] items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)]",
-                barberValid && !submitting
+                allValid && !submitting
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",
               )}

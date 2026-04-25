@@ -1262,23 +1262,23 @@ function Section({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.4 }}
-      className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] sm:p-7"
+      className="rounded-2xl border border-border bg-card p-3.5 shadow-[var(--shadow-card)] sm:p-7"
     >
-      <div className="mb-5 flex items-start gap-3.5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-foreground text-background">
+      <div className="mb-4 flex items-start gap-3 sm:mb-5 sm:gap-3.5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-foreground text-background sm:h-10 sm:w-10">
           {icon}
         </div>
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="min-w-0 flex-1">
+          <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-[10px] sm:tracking-[0.18em]">
             {label}
           </div>
-          <h2 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
+          <h2 className="text-[15px] font-semibold leading-tight tracking-tight text-foreground sm:text-lg">
             {title}
           </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">{description}</p>
+          <p className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground sm:text-sm">{description}</p>
         </div>
       </div>
-      <div className="space-y-4">{children}</div>
+      <div className="space-y-3.5 sm:space-y-4">{children}</div>
     </motion.section>
   );
 }

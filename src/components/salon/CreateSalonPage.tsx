@@ -1130,7 +1130,7 @@ function StepIndicator({
       </div>
 
       {/* Sub-step dots — visible on all sizes, scrollable on mobile */}
-      <div className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-1 flex items-center justify-center gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {STEP_META.map((meta, i) => {
           const Icon = meta.icon;
           const done = i < step;

@@ -1542,13 +1542,13 @@ function ScheduleEditor({
   const HOURS = Array.from({ length: 25 }, (_, i) => i);
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* SUMMARY STRIP */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex items-center justify-between gap-3"
+        className="flex items-center justify-between gap-2.5"
       >
         <div>
           <div className="flex items-baseline gap-1.5">
@@ -1556,13 +1556,13 @@ function ScheduleEditor({
               key={openCount}
               initial={{ y: -6, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="text-3xl font-bold tracking-tight text-foreground tabular-nums sm:text-4xl"
+              className="text-2xl font-bold tracking-tight text-foreground tabular-nums sm:text-4xl"
             >
               {openCount}
             </motion.span>
-            <span className="text-sm font-semibold text-muted-foreground">/ 7 kun</span>
+            <span className="text-[13px] font-semibold text-muted-foreground sm:text-sm">/ 7 kun</span>
           </div>
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-[10.5px] text-muted-foreground sm:text-[11px]">
             {openCount === 0
               ? "Ish kuni tanlanmagan"
               : openCount === 7
@@ -1587,12 +1587,12 @@ function ScheduleEditor({
             key={p.key}
             whileTap={{ scale: 0.96 }}
             onClick={p.apply}
-            className="group inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-left transition-colors hover:border-foreground hover:bg-muted/40"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-left transition-colors hover:border-foreground hover:bg-muted/40 sm:gap-2 sm:px-3.5 sm:py-2"
           >
-            <span className="text-[12px] font-bold leading-none text-foreground">
+            <span className="text-[11px] font-bold leading-none text-foreground sm:text-[12px]">
               {p.label}
             </span>
-            <span className="text-[10px] font-medium leading-none text-muted-foreground tabular-nums">
+            <span className="text-[9.5px] font-medium leading-none text-muted-foreground tabular-nums sm:text-[10px]">
               {p.sub}
             </span>
           </motion.button>
@@ -1714,7 +1714,7 @@ function ScheduleEditor({
               >
                 <div className="border-t border-border/60 px-4 py-4 sm:px-5 sm:py-5">
                   {/* TIME RANGE — large display */}
-                  <div className="mb-4 flex items-center justify-center gap-3 sm:gap-5">
+                  <div className="mb-4 flex items-stretch justify-center gap-2 sm:gap-5">
                     <TimePicker
                       label="Ochilish"
                       value={selected.from}
@@ -1723,7 +1723,7 @@ function ScheduleEditor({
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-2xl font-light text-muted-foreground"
+                      className="flex items-center text-xl font-light text-muted-foreground sm:text-2xl"
                     >
                       —
                     </motion.div>

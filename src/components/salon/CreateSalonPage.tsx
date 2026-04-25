@@ -278,7 +278,7 @@ export function CreateSalonPage() {
   const currentMeta = STEP_META[step];
 
   return (
-    <div className="min-h-screen bg-background pb-28 sm:pb-32">
+    <div className="min-h-screen bg-background pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pb-32">
       {/* Success overlay */}
       <AnimatePresence>
         {success && (
@@ -292,14 +292,14 @@ export function CreateSalonPage() {
 
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[920px] items-center justify-between px-5 py-4 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground">
-              <Scissors className="h-4 w-4 text-background" />
+        <div className="mx-auto flex max-w-[920px] items-center justify-between px-3.5 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground sm:h-8 sm:w-8">
+              <Scissors className="h-3.5 w-3.5 text-background sm:h-4 sm:w-4" />
             </div>
-            <span className="text-sm font-semibold tracking-tight">Barber Studio</span>
+            <span className="text-[13px] font-semibold tracking-tight sm:text-sm">Barber Studio</span>
           </div>
-          <span className="text-xs font-medium tabular-nums text-muted-foreground">
+          <span className="text-[11px] font-medium tabular-nums text-muted-foreground sm:text-xs">
             <span className="text-foreground">{step + 1}</span>
             <span className="opacity-50"> / {TOTAL_STEPS}</span>
           </span>
@@ -319,9 +319,9 @@ export function CreateSalonPage() {
         }} />
       </header>
 
-      <main className="mx-auto max-w-[920px] px-4 pt-8 sm:px-6 sm:pt-14">
+      <main className="mx-auto max-w-[920px] px-3.5 pt-5 sm:px-6 sm:pt-14">
         {/* Animated hero — changes per step */}
-        <div className="mb-7 overflow-hidden text-center sm:mb-10">
+        <div className="mb-5 overflow-hidden text-center sm:mb-10">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={`hero-${step}`}
@@ -331,16 +331,16 @@ export function CreateSalonPage() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             >
-              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-background">
-                  <currentMeta.icon className="h-2.5 w-2.5" />
+              <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground sm:mb-3 sm:px-2.5 sm:py-1 sm:text-[10px]">
+                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-foreground text-background sm:h-4 sm:w-4">
+                  <currentMeta.icon className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
                 </span>
                 {currentMeta.group} · Qadam {step + 1}
               </div>
-              <h1 className="text-[26px] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-5xl">
+              <h1 className="text-[22px] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-5xl">
                 {currentMeta.title}
               </h1>
-              <p className="mx-auto mt-2.5 max-w-[520px] px-2 text-[13px] leading-snug text-muted-foreground sm:mt-3 sm:px-0 sm:text-base">
+              <p className="mx-auto mt-2 max-w-[520px] px-1 text-[12.5px] leading-snug text-muted-foreground sm:mt-3 sm:px-0 sm:text-base">
                 {currentMeta.subtitle}
               </p>
             </motion.div>
@@ -355,7 +355,7 @@ export function CreateSalonPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: direction > 0 ? -60 : 60 }}
             transition={{ duration: 0.36, ease: [0.4, 0, 0.2, 1] }}
-            className="space-y-5 sm:space-y-6"
+            className="space-y-4 sm:space-y-6"
           >
             {step === 0 && (
               <SalonInfoStep

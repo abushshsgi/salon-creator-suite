@@ -563,7 +563,7 @@ function SalonLocationStep(props: {
       description="Mijozlar sizni topa olishi uchun aniq manzil."
     >
       {/* Map preview on top — large, visual, premium */}
-      <div className="relative h-52 overflow-hidden rounded-2xl border border-border bg-muted/30 sm:h-60">
+      <div className="relative h-40 overflow-hidden rounded-2xl border border-border bg-muted/30 sm:h-60">
         {/* grid */}
         <div
           className="absolute inset-0 opacity-60"
@@ -929,7 +929,7 @@ function BarberServicesStep(props: {
               transition={{ duration: 0.22 }}
               className="overflow-hidden"
             >
-              <div className="group relative rounded-2xl border border-border bg-card p-3.5 shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)] hover:border-foreground/40 sm:p-4">
+              <div className="group relative rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)] hover:border-foreground/40 sm:p-4">
                 {/* number badge */}
                 <div className="absolute -left-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-[10px] font-bold tabular-nums text-background shadow-[var(--shadow-soft)]">
                   {i + 1}

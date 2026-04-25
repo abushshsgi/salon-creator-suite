@@ -1090,9 +1090,9 @@ function StepIndicator({
   const barberActive = currentGroup === "Barber";
 
   return (
-    <div className="mx-auto max-w-[920px] px-5 pb-5 sm:px-6">
+    <div className="mx-auto max-w-[920px] px-3.5 pb-3.5 sm:px-6 sm:pb-5">
       {/* TWO BIG GROUP ICONS — Salon · line · Barber */}
-      <div className="mb-4 flex items-center justify-center gap-2 sm:gap-4">
+      <div className="mb-3 flex items-center justify-center gap-2 sm:mb-4 sm:gap-4">
         <GroupChip
           icon={Store}
           label="Salon"
@@ -1115,8 +1115,8 @@ function StepIndicator({
       </div>
 
       {/* Progress track with percent */}
-      <div className="mb-3 flex items-center gap-3">
-        <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+      <div className="mb-2.5 flex items-center gap-2.5 sm:mb-3 sm:gap-3">
+        <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-muted sm:h-1.5">
           <motion.div
             className="absolute inset-y-0 left-0 rounded-full bg-foreground"
             initial={false}
@@ -1124,7 +1124,7 @@ function StepIndicator({
             transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
           />
         </div>
-        <span className="text-[10px] font-semibold uppercase tracking-wider tabular-nums text-muted-foreground">
+        <span className="text-[9px] font-semibold uppercase tracking-wider tabular-nums text-muted-foreground sm:text-[10px]">
           {Math.round(progress)}%
         </span>
       </div>
@@ -1147,7 +1147,7 @@ function StepIndicator({
                 onClick={() => reachable && onJump(i)}
                 disabled={!reachable}
                 className={cn(
-                  "group relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-[var(--transition-smooth)]",
+                  "group relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold transition-[var(--transition-smooth)] sm:h-8 sm:w-8",
                   done
                     ? "border-foreground bg-foreground text-background"
                     : active
@@ -1158,7 +1158,7 @@ function StepIndicator({
                 )}
                 aria-label={`${meta.short} qadami`}
               >
-                {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
+                {done ? <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> : <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
                 {active && (
                   <motion.span
                     layoutId="active-ring"

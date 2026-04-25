@@ -692,7 +692,7 @@ function SalonCoverStep(props: {
         }}
       />
       {props.cover ? (
-        <div className="group relative h-56 w-full overflow-hidden rounded-2xl border border-border bg-muted sm:h-72">
+        <div className="group relative h-44 w-full overflow-hidden rounded-2xl border border-border bg-muted sm:h-72">
           <img
             src={props.cover}
             alt="Salon cover"
@@ -736,19 +736,19 @@ function SalonCoverStep(props: {
             props.handleCoverFile(e.dataTransfer.files);
           }}
           className={cn(
-            "group flex h-56 w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-muted/30 transition-[var(--transition-smooth)] sm:h-72",
+            "group flex h-44 w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed bg-muted/30 transition-[var(--transition-smooth)] sm:h-72",
             props.coverDrag
               ? "border-foreground bg-muted"
               : "border-border hover:border-foreground/40 hover:bg-muted/50",
           )}
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background shadow-[var(--shadow-soft)] transition-transform group-hover:scale-110">
-            <UploadCloud className="h-5 w-5 text-foreground" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-background shadow-[var(--shadow-soft)] transition-transform group-hover:scale-110 sm:h-12 sm:w-12">
+            <UploadCloud className="h-4 w-4 text-foreground sm:h-5 sm:w-5" />
           </div>
-          <span className="text-sm font-semibold text-foreground">
+          <span className="text-[13px] font-semibold text-foreground sm:text-sm">
             Cover rasm yuklash
           </span>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="px-3 text-center text-[10.5px] text-muted-foreground sm:text-[11px]">
             Surib qo'ying yoki bosing · PNG, JPG · 10MB gacha
           </span>
         </button>

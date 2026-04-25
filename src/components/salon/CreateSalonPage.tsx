@@ -423,17 +423,18 @@ export function CreateSalonPage() {
       </main>
 
       {/* Sticky bottom action bar */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[920px] items-center justify-between gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:gap-3 sm:px-6 sm:py-4">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[920px] items-center justify-between gap-2 px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:gap-3 sm:px-6 sm:py-4">
           <button
             onClick={goBack}
             disabled={step === 0 || submitting}
             className={cn(
-              "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3.5 text-sm font-medium text-foreground transition-[var(--transition-smooth)] sm:h-11 sm:px-4",
+              "inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background text-sm font-medium text-foreground transition-[var(--transition-smooth)] sm:h-11 sm:w-auto sm:px-4",
               step === 0
                 ? "cursor-not-allowed opacity-40"
                 : "hover:bg-muted active:scale-[0.98]",
             )}
+            aria-label="Orqaga"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Orqaga</span>
@@ -461,7 +462,7 @@ export function CreateSalonPage() {
               onClick={goNext}
               disabled={!canNext}
               className={cn(
-                "group inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:h-11 sm:flex-none sm:min-w-[170px]",
+                "group inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition-[var(--transition-smooth)] sm:h-11 sm:flex-none sm:min-w-[170px] sm:text-sm",
                 canNext
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",
@@ -475,7 +476,7 @@ export function CreateSalonPage() {
               disabled={!allValid || submitting}
               onClick={handleSubmit}
               className={cn(
-                "inline-flex h-12 flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-sm font-semibold transition-[var(--transition-smooth)] sm:h-11 sm:flex-none sm:min-w-[170px]",
+                "inline-flex h-11 flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl px-4 text-[13px] font-semibold transition-[var(--transition-smooth)] sm:h-11 sm:flex-none sm:min-w-[170px] sm:text-sm",
                 allValid && !submitting
                   ? "bg-foreground text-background hover:scale-[1.02] active:scale-[0.98]"
                   : "cursor-not-allowed bg-muted text-muted-foreground",

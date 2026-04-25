@@ -1994,7 +1994,7 @@ function SuccessOverlay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-background/95 px-5 py-6 backdrop-blur-2xl"
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-background/95 px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] backdrop-blur-2xl sm:px-5 sm:py-6"
     >
       {/* Subtle gradient backdrop */}
       <div
@@ -2010,7 +2010,7 @@ function SuccessOverlay({
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.98, opacity: 0, y: 4 }}
         transition={{ type: "spring", stiffness: 280, damping: 26 }}
-        className="relative my-auto w-full max-w-[420px] text-center"
+        className="relative my-auto w-full max-w-[420px] px-1 text-center"
       >
         {/* Big number — celebrates the moment without an icon */}
         <motion.div
@@ -2022,7 +2022,7 @@ function SuccessOverlay({
           {/* Animated single arc — minimal, elegant */}
           <motion.svg
             viewBox="0 0 80 80"
-            className="mb-4 h-16 w-16 sm:h-20 sm:w-20"
+            className="mb-3 h-14 w-14 sm:mb-4 sm:h-20 sm:w-20"
             fill="none"
             stroke="currentColor"
             strokeWidth={2.5}
@@ -2062,7 +2062,7 @@ function SuccessOverlay({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.65, duration: 0.4 }}
-          className="text-3xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
+          className="text-[26px] font-bold leading-[1.1] tracking-tight text-foreground sm:text-4xl"
         >
           Hammasi tayyor
         </motion.h2>
@@ -2072,7 +2072,7 @@ function SuccessOverlay({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.75, duration: 0.4 }}
-          className="mx-auto mt-3 max-w-[300px] text-[13px] leading-relaxed text-muted-foreground sm:text-sm"
+          className="mx-auto mt-2.5 max-w-[300px] px-2 text-[12.5px] leading-relaxed text-muted-foreground sm:mt-3 sm:px-0 sm:text-sm"
         >
           Saloningiz va profilingiz muvaffaqiyatli yaratildi. Endi mijozlar sizni topa oladi.
         </motion.p>
@@ -2082,7 +2082,7 @@ function SuccessOverlay({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.85, duration: 0.4 }}
-          className="mx-auto mt-7 flex max-w-[340px] items-stretch justify-center divide-x divide-border"
+          className="mx-auto mt-6 flex max-w-[340px] items-stretch justify-center divide-x divide-border sm:mt-7"
         >
           <div className="flex-1 px-3">
             <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -2110,7 +2110,7 @@ function SuccessOverlay({
           onClick={onClose}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background transition-colors hover:opacity-90"
+          className="mt-7 inline-flex h-12 w-full items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background transition-colors hover:opacity-90 sm:mt-8"
         >
           Davom etish
         </motion.button>

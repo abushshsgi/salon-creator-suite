@@ -1893,7 +1893,7 @@ function TimePicker({
           el.focus();
         }
       }}
-      className="group relative flex flex-1 flex-col items-center rounded-2xl border border-border bg-background px-3 py-3 transition-colors hover:border-foreground sm:px-4 sm:py-4"
+      className="group relative flex flex-1 flex-col items-center rounded-2xl border border-border bg-background px-2 py-2.5 transition-colors hover:border-foreground sm:px-4 sm:py-4"
     >
       <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
         {label}
@@ -1903,7 +1903,7 @@ function TimePicker({
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18 }}
-        className="mt-0.5 text-2xl font-bold tabular-nums tracking-tight text-foreground sm:text-[28px]"
+        className="mt-0.5 text-xl font-bold tabular-nums tracking-tight text-foreground sm:text-[28px]"
       >
         {value}
       </motion.span>

@@ -782,7 +782,7 @@ function BarberProfileStep(props: {
       title="Barber haqida"
       description="Mijozlar sizni shu ism va rasm bilan ko'radi."
     >
-      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-5">
         <div className="relative">
           <input
             ref={fileRef}
@@ -797,7 +797,7 @@ function BarberProfileStep(props: {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted text-2xl font-semibold uppercase text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground"
+            className="group relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted text-2xl font-semibold uppercase text-muted-foreground transition-[var(--transition-smooth)] hover:border-foreground sm:h-28 sm:w-28"
           >
             {props.avatar ? (
               <img
